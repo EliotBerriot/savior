@@ -3,7 +3,7 @@ saves
 env_settings.py
 settings.ini
 datasets/*
-!datasets/examples
+!datasets/examples/
 # OS generated files #
 ######################
 .DS_Store
