@@ -362,101 +362,14 @@ class Saver():
 
 		logger.info("{0}/{1} has been removed".format(self.dataset.name, self.save_directory))
 		
-	
-	def ftp_connect(self):
-		server = self.dataset.parent.settings.get("ftp", "server")
-		user = self.dataset.parent.settings.get("ftp", 'user')
-		password = self.dataset.parent.settings.get("ftp", 'password')
-		session = ftplib.FTP(server, user, password)
-		path = self.dataset.parent.settings.get("ftp", "save_path")
-		session.cwd(path)
-		return session
 
 	# put the save on the FTP server
-	def ftp_backup(self):
-		try:			
-			session = self.ftp_connect()
-			
-			session.cwd(self.ftp_create_dataset_directory(session)) # create dataset directory if it does not exists
-			os.chdir(self.dataset.save_directory)
-			logger.info("{0} : Uploading files...".format(self.dataset.name))
-			self.ftp_save_directory = self.ftp_upload_directory(session, self.save_directory.split("/")[-1]) # upload the directory to the server
-			session.quit()
-			logger.info("{0} : FTP Upload OK".format(self.dataset.name))
-			self.ftp_saved=True
-		except Exception, e:
-			print(str(e))
-			raise SaveError("{0} : Error during FTP backup".format(self.dataset.name), "e")
-	# create the save directory on remote FTP server if it does not exist
-	def ftp_create_dataset_directory(self, session):
-		self.ftp_dataset_directory = self.dataset.save_directory.split("/")[-1]
-		filelist = session.nlst(session.pwd()) 
-		exists=False
-		i = 0
-		for f in filelist:
-			if self.ftp_dataset_directory == f.split("/")[-1]:
-				exists = True
-			i+=1
-		if not exists:
-			session.mkd(self.ftp_dataset_directory)
-		return self.ftp_dataset_directory
-			
-	def ftp_create_save_directory(self, session):
-		self.ftp_save_directory = self.save_directory.split("/")[-1]
-		session.mkd(self.ftp_save_directory)
-		return self.ftp_save_directory
-
-	def ftp_upload_directory(self, session, directory): # put a directory (and files and directory in it) on the ftp server
-		session.mkd(directory)
-		session.cwd(directory)
-		for root, dirs, files in os.walk(directory):
-			os.chdir(directory)
-			for file in files:
-				self.ftp_upload_file(session, file)
-			for dir in dirs:
-				self.ftp_upload_directory(session, dir)
-		os.chdir("../")
-		session.cwd("../")
-		return directory
-	def ftp_upload_file(self, session, file_name):
-		file = open(file_name, "rb")
-		session.storbinary("STOR " + file_name, file)	
-		file.close()
 	
-	def ftp_clear_save(self):
-		session = self.ftp_connect()
-		path = "/"+self.dataset.parent.settings.get("ftp", "save_path")+"/"+self.dataset.save_directory.split("/")[-1]+"/"+self.save_directory.split("/")[-1]
-		try:
-			self.ftp_remove_directory(session, path)
-			logger.info("{0}/{1} directory removed from FTP server.".format(self.dataset.name, self.save_directory.split("/")[-1]))
-		except Exception, e:
-			logger.debug("Can't remove {0} from FTP server".format(path))
+			
+	
 
-
-	def ftp_is_file(self, session, name):
-		
-		current = session.pwd()
-		try:
-			session.cwd(filename)
-		except:
-			session.cwd(current)
-			return True
-		session.cwd(current)
-		return False
-
-	def ftp_remove_directory(self, session, path):
-		directory = path.split("/")[-1]
-		session.cwd(path)		
-		names = session.nlst(path)
-		for name in names:
-			if self.ftp_is_file(session, name):
-				session.delete(name)
-			else:
-				self.ftp_remove_directory(session, path+"/"+directory)
-
-		session.cwd("../")
-		session.rmd(directory)
-
+	
+	
 	def filesystem_clear_save(self):
 		shutil.rmtree(self.save_directory)
 		logger.info("{0}/{1} directory deleted from local filesystem.".format(self.dataset.name, self.save_directory.split("/")[-1]))
@@ -492,20 +405,6 @@ class Saver():
 class ParseConfigError(Exception):
 	def __init__(self, name, e):
 		self.message = "{0} : Error while parsing config file. Error : {1}".format(name, e)
-		logger.critical(self.message)
-	def __str__(self):
-		return self.message
-
-class SaveError(Exception):
-	def __init__(self, name, e):
-		self.message = "{0} : Error while saving. Autosave is cancelling. Error : {1}".format(name, e)
-		logger.critical(self.message)
-	def __str__(self):
-		return self.message
-
-class ConnectionError(Exception):
-	def __init__(self, message):
-		self.message = message
 		logger.critical(self.message)
 	def __str__(self):
 		return self.message
