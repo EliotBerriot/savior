@@ -1,0 +1,62 @@
+Presentation
+=============================
+Autosave is a tool built to automate these tasks :
+- Create an archive of some files, using tar
+- Create sql dumps of databases
+- Send data via FTP to create a backup on a remote server
+- Send a mail when the backup process is over
+
+Dependencies
+=============================
+In order to run use autosave, you muse have installed:
+- Python 2.6.6 or greater
+- Fabric 1.6 or greater
+
+Installation and configuration
+=============================
+
+1. extract autosave folder in the desired location
+2. complete settings.ini with your own infos (MYSQL, FTP, mail...)
+3. set the datasets you want to save in datasets. 
+
+Here is a typical dataset config example :
+[my_dataset]
+
+[files]
+type=filesystem
+path=/path/to/my_custom_dataset/files
+
+[production_database]
+type=mysql
+database=name_of_my_dataset_database
+
+[test_database]
+type=mysql
+database=name_of_my_dataset_database
+
+Usage
+============================
+
+Once you're done, you can use autosave as follows:
+cd path/to/autosave/folder
+sudo fab autosave
+
+This command will iterate through all your datasets and save them to a new directory (using current datestamp as name). 
+Then, it will put this whole directory on your FTP server, and send you an email once it's done.
+
+You can also save a specific dataset :
+sudo fab save:another_dataset
+
+It will only save another_dataset.
+
+Autosave has an autosave.sh script you can use in your crontab : 
+sudo crontab -e
+And add the following lines to save your datasets everyday, on midnight :
+
+# autosave
+* 0 * * * /path/to/autosave/autosave.sh 
+
+Contact and bug report
+===========================
+You can contact me for any question at contact@eliotberriot.com
+
