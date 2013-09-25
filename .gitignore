@@ -1,0 +1,20 @@
+# Project settings and static files
+saves
+env_settings.py
+settings.ini
+datasets/*
+!datasets/examples
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+env_settings.py
+*.pyc
+*.sql
+*.py[cod]
+*~
