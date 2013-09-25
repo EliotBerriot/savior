@@ -2,6 +2,7 @@
 saves
 env_settings.py
 settings.ini
+hosts.ini
 datasets/*
 !datasets/examples/
 # OS generated files #
