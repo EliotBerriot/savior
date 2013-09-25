@@ -1,6 +1,7 @@
  # -*- coding: utf-8 -*-
 
 from autosaver import Autosaver, ParseConfigError
+from fabric.api import local, run, cd, env, prefix
 import logging
 import env_settings
 REMOTE_WORKING_DIR = env_settings.REMOTE_WORKING_DIR
