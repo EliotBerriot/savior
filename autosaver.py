@@ -16,52 +16,7 @@ logger.setLevel(logging.DEBUG)
 
 class Autosaver():
 	def __init__(self, datasets_to_save="all",force_save=False, save_filesystem = True, save_databases = True, ftp_backup = True):
-		self.datasets_to_save=datasets_to_save
-		# get autosave settings
-		self.settings = ConfigParser.ConfigParser()
-		self.settings.read("settings.ini")
-
-		# if force_safe is set to True, days_between_saves option in settings will be ignored
-		self.force_save = force_save
-
-		# enable filesystem saving
-		self.save_filesystem = save_filesystem
-
-		# enable databases dump
-		self.save_databases = save_databases
-		# enable ftp backup
-		self.ftp_backup = ftp_backup
 		
-		# stamp used for logs and directory names
-		self.stamp = datetime.now()
-
-		# path to the current script
-		self.root_path = os.path.dirname(os.path.realpath(__file__))
-		os.chdir(self.root_path)
-
-		# path to datasets saves
-		self.save_path = self.root_path+"/"+self.settings.get("global", "save_path")
-		
-		self.operations={}
-		self.operations['filesystem'] = self.save_filesystem
-		self.operations['mysql'] = self.save_databases
-		self.operations['ftp'] = self.ftp_backup
-		#setting log
-		
-		# create file handler which logs even debug messages
-		self.log = 'logs/{0}.log'.format( self.stamp.strftime(self.settings.get("global", "folder_name")))
-		fh = logging.FileHandler(self.log)
-		fh.setLevel(logging.DEBUG)
-		# create console handler with a higher log level
-		ch = logging.StreamHandler()
-		ch.setLevel(logging.DEBUG)
-		# create formatter and add it to the handlers
-		formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-		ch.setFormatter(formatter)
-		fh.setFormatter(formatter)
-		# add the handlers to logger
-		logger.addHandler(ch)
-		logger.addHandler(fh)
 		self.saved_datasets = []
 		self.not_saved_datasets = []
 		self.last_save_too_recent_datasets = []
@@ -109,37 +64,8 @@ class Autosaver():
 	def files(self, path): 
 		for file in os.listdir(path):
 			if os.path.isfile(path+"/"+file):
-				yield file
-		
-	def check_credentials(self):
-		mysql = self.check_mysql()
-		ftp = self.check_ftp()		
+				yield file		
 	
-	def check_mysql(self):
-		user = self.settings.get("mysql", 'user')
-		password = self.settings.get("mysql", 'password')
-		with settings(warn_only=True):
-			
-			l = local('mysql -u {0} --password={1} -e "exit"'.format(user, password))
-			if l.return_code == 2:
-				raise ConnectionError("Can't connect to MySQL database")
-			else:
-				logger.info("Connection to MySQL database OK")			
-		
-
-	def check_ftp(self):
-		server = self.settings.get("ftp", "server")
-		user = self.settings.get("ftp", 'user')
-		password = self.settings.get("ftp", 'password')
-
-		try:			
-			session = ftplib.FTP(server, user, password)
-			session.quit()
-			logger.info("FTP connection OK")
-			return True
-		except Exception, e:
-			logger.critical("Can't connect to FTP server using given credentials. Error : {0}".format(str(e)))
-			return False
 	
 	def mail(self):
 		formated_stamp = self.stamp.strftime('%Y-%m-%d %Hh%M')
@@ -313,37 +239,6 @@ class Saver():
 		dir = self.save_path+"/"+stamp
 		os.mkdir(dir)
 		return dir
-	
-	def dump_mysql(self, section):
-		database = self.dataset.settings.get(section, 'database')
-		user = self.dataset.parent.settings.get("mysql", 'user')
-		password = self.dataset.parent.settings.get("mysql", 'password')
-		with settings(warn_only=True):
-			with hide('output', 'running', 'warnings'):
-				l = local("mysqldump -u {0} --password={1} {2} > {3}/{4}.sql".format(user, password, database, self.save_directory, database))		
-				if l.return_code == 2:
-					raise SaveError(self.dataset.name, l)
-				else:
-					logger.info("{0}/{1} database has been saved".format(self.dataset.name, database, self.save_directory))
-					self.mysql_saved=True
-
-	def dump_filesystem(self, section):
-		tar_name = section
-		path = self.dataset.settings.get(section, 'path')
-		
-		# add excluded files to the command
-		exclude = " "
-		if self.dataset.settings.has_option(section, 'exclude'):
-			excluded = self.dataset.settings.get(section, 'exclude').split(",")
-			for x in excluded:
-				exclude+='--exclude="{0}" '.format(x)
-		with settings(warn_only=True):
-			l = local('tar -cf "{0}.tar" {1} "{2}"'.format(tar_name, exclude, path))
-			if l.return_code == 2:
-				raise SaveError(self.dataset.name, l)
-			else:
-				logger.info("{0}/{1} filesystem has been saved".format(self.dataset.name, section))
-				self.filesystem_saved=True
 
 	def clear_save(self, save="current"):
 		if save == "current":
