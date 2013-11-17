@@ -4,6 +4,8 @@ env_settings.py
 settings.ini
 hosts.ini
 datasets/*
+logs/*
+!logs/.empty
 !datasets/examples/
 # OS generated files #
 ######################
