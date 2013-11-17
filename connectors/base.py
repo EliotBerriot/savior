@@ -54,8 +54,8 @@ class DatabaseConnector(RemoteConnector):
 
 class SaveError(Exception):
     def __init__(self, name, e):
-        self.message = "{0} : Error while saving. Autosave is cancelling. Error
-            : {1}".format(name, e)
+        self.message = """{0} : Error while saving. Autosave is cancelling. Error
+            : {1}""".format(name, e)
         logger.critical(self.message)
     def __str__(self):
         return self.message

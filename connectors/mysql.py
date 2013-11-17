@@ -32,6 +32,7 @@ class MySQLConnector(DatabaseConnector):
                         self.dataset_name, 
                         self.database
                         )
+                    )
                 
     def check_connection(self):
         with settings(warn_only=True):            
@@ -42,8 +43,7 @@ class MySQLConnector(DatabaseConnector):
             )
             if l.return_code == 2:
                 raise ConnectionError(
-                    "Can't connect to MySQL database
-                    '{}'".format(self.database)
+                    "Can't connect to MySQL database '{1}'".format(self.database)
                     )
                 return False
             else:

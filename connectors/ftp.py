@@ -26,11 +26,11 @@ class FTPConnector(RemoteConnector):
             logger.info("FTP connection OK")
             return True
         except Exception, e:
-            message = "Can't connect to FTP server using given
-credentials. Error : {0}".format(str(e))
+            message = """Can't connect to FTP server using given
+                credentials. Error : {0}""".format(str(e))
             raise ConnectionError(message)
             return False
-     def connect(self):        
+    def connect(self):        
         self.session = ftplib.FTP(
                 self.host["hostname"],
                 self.credentials["username"],
@@ -80,9 +80,9 @@ credentials. Error : {0}".format(str(e))
         return directory_name
         
     def upload_directory(self, directory): 
-    """
-        recursively upload local directory on FTP host
-    """
+        """
+            recursively upload local directory on FTP host
+        """
         print(directory)
         self.session.mkd(directory)
         self.session.cwd(directory)
