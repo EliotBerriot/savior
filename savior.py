@@ -9,9 +9,9 @@ import shutil
 import smtplib
 from email.mime.text import MIMEText
 import logging
-import connectors.filesystem import FileSystemConnector
-import connectors.mysql import MySQLConnector
-import connectors.ftp import FTPConnector
+from connectors.filesystem import FileSystemConnector
+from connectors.mysql import MySQLConnector
+from connectors.ftp import FTPConnector
 
 logger = logging.getLogger('autosave')
 logger.setLevel(logging.DEBUG)
@@ -56,7 +56,7 @@ class Savior(object):
         os.chdir(self.root_path)
 
         # path to datasets saves
-        settings_save_path = self.settings.get("save","save_path")
+        settings_save_path = self.settings.get("global","save_path")
         if not settings_save_path[0] == "/":
             # if save path in settings file is relative
             self.save_path = self.root_path+"/"+settings_save_path
@@ -66,22 +66,25 @@ class Savior(object):
         self.saved_datasets = []
         self.not_saved_datasets = []
         self.last_save_too_recent_datasets = []
-        # create datasets objects
+        
+        # create datasets
         self.datasets_path = self.root_path+"/datasets" 
         self.datasets = []
+        datasets_names = []
+        
+        #get name of datasets to save
         if self.datasets_to_save=="all":
-            for file in list(self.files(self.datasets_path)):           
-                # exclude files ending with a ~
-                if (file[-1]!="~"):             
-                    ds = Dataset(self, self.datasets_path, file)
-                    self.datasets.append(ds)
+            for file_name in os.listdir(self.datasets_path): 
+                datasets_names.append(file_name)
         # save a single dataset
         else:
-            try:
-                ds = Dataset(self.datasets_path, self.datasets_to_save)
-                self.datasets.append(ds)
-            except Exception, e:
-                pass
+            datasets_names.append(self.datasets_to_save)
+           
+        # instantiate datasets objects
+        for file_name in datasets_names:
+            ds = Dataset(self.datasets_path, file_name)
+            self.datasets.append(ds)
+            
     def log_setup(self):
         # create file handler which logs even debug messages
         self.log = 'logs/{0}.log'.format(
@@ -106,6 +109,7 @@ class Savior(object):
  
     def save(self):
         for ds in self.datasets:
+            ds.save()
         
     def get_config(self):
         """
@@ -162,11 +166,13 @@ class Dataset():
         self.sections = self.settings.sections()
         self.name = config_file        
         
+    def save(self):
+        
             
 class ParseConfigError(Exception):
     def __init__(self, name, e):
-        self.message = "{0} : Error while parsing config file. Error :
-{1}".format(name, e)
+        self.message = """{0} : Error while parsing config file. Error :
+                            {1}""".format(name, e)
         logger.critical(self.message)
     def __str__(self):
         return self.message

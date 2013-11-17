@@ -1,6 +1,6 @@
  # -*- coding: utf-8 -*-
 
-from autosaver import Autosaver, ParseConfigError
+from savior import Savior, ParseConfigError
 from fabric.api import local, run, cd, env, prefix
 import logging
 import env_settings
@@ -13,25 +13,25 @@ logger = logging.getLogger('autosave')
 logger.setLevel(logging.DEBUG)
 
 def autosave(datasets="all", force_save=False):
-	try:
-		a = Autosaver(datasets, force_save)
-		a.save()
-	except ParseConfigError, e:
-		logger.critical("Could not save datasets {0}".format(datasets))
-		
+    try:
+        a = Savior(datasets, force_save)
+        a.save()
+    except ParseConfigError, e:
+        logger.critical("Could not save datasets {0}".format(datasets))
+        
 def clean(datasets="all", force_save=False): # remove saves that are too old
-	try:
-		a = Autosaver(datasets, force_save)
-		a.clean()
-	except ParseConfigError, e:
-		logger.critical("Could not save datasets {0}".format(datasets))
+    try:
+        a = Savior(datasets, force_save)
+        a.clean()
+    except ParseConfigError, e:
+        logger.critical("Could not save datasets {0}".format(datasets))
 
 def purge(datasets="all", force_save=False): # remove all saves
-	try:
-		a = Autosaver(datasets, force_save)
-		a.purge()
-	except ParseConfigError, e:
-		logger.critical("Could not save datasets {0}".format(datasets))
+    try:
+        a = Savior(datasets, force_save)
+        a.purge()
+    except ParseConfigError, e:
+        logger.critical("Could not save datasets {0}".format(datasets))
 
 def push(branch='master', remote='origin', runlocal=True):
     if runlocal:
