@@ -23,7 +23,13 @@ class FTPUploadConnector(RemoteConnector):
             return self.ftp_port
     def set_remote_saves_directory(self, remote_saves_directory):
         self.remote_saves_directory = remote_saves_directory
-    
+    def convert_to_boolean(self, value):
+        if value in ['true', "yes", "1", "on", True]:
+            return True
+        elif value in ['false', "no", "0", "off", False]:
+            return False
+        else:
+            raise Exception("Can't convert value {0} to boolean".format(value))
     def set_local_saves_directory(self, local_saves_directory):
         self.local_saves_directory = local_saves_directory
     
@@ -31,7 +37,7 @@ class FTPUploadConnector(RemoteConnector):
         super(FTPUploadConnector, self).prepare_connection()
         self.local_saves_directory = self.kwargs.get('local_saves_directory', None)
         self.remote_saves_directory = self.get_host_option('save_path', './')
-        self.sftp = self.get_host_option('sftp', False)
+        self.sftp = self.convert_to_boolean(self.get_host_option('sftp', False))
     def check_connection(self):       
         super(FTPUploadConnector, self).check_connection()
         try:            
@@ -44,31 +50,38 @@ class FTPUploadConnector(RemoteConnector):
             message = """Can't connect to FTP server using given credentials. Error : {0}""".format(str(e))
             raise ConnectionError(message)
             return False
-    def connect(self): 
+    def connect(self):         
+        self.prepare_connection()
         hostname = self.host["hostname"]
         port = self.host["port"]
         username = self.credentials["username"]
         password = self.credentials["password"]
-        self.prepare_connection()
         if self.sftp:
             transport = paramiko.Transport((hostname, port))
             transport.connect(username = username, password = password)
             self.session = paramiko.SFTPClient.from_transport(transport)
         else:
-            self.session = paramiko.FTPClient.from_transport(transport)
+            self.session = ftplib.FTP(
+                hostname,
+                username,
+                password,
+            )
         self.init_connection()
      
     def close_connection(self):
-        self.session.close()
+        if self.sftp:
+            self.session.close()
+        else:
+            self.session.quit()
     def init_connection(self):
-        self.session.chdir(self.remote_saves_directory)
+        self.chdir(self.remote_saves_directory)
     def get_connection(self):
         """
             Get FTP session or create it
         """
         if not self.session:
             self.connect()
-        self.session.chdir(self.remote_saves_directory)
+        self.chdir(self.remote_saves_directory)
         
     def upload(self):
         self.prepare_save()
@@ -81,13 +94,13 @@ class FTPUploadConnector(RemoteConnector):
         self.get_or_create(self.dataset_name)
         os.chdir(self.dataset_name)
         # check if current save directory already exists on remote host
-        try:
-            os.chdir(self.dataset_save_id)
-            logger.info("Uploading files...")
-            self.upload_directory(os.getcwd())
-            self.session.close_connection()
-        except Exception, e:
-            raise FTPUploadError(e)
+        #try:
+        os.chdir(self.dataset_save_id)
+        logger.info("Uploading files to {0} ...".format(self.host['hostname']))
+        self.upload_directory(os.getcwd())
+        self.close_connection()
+        #except Exception, e:
+        #    raise FTPUploadError(e)
      
     def chdir(self, path):
         if self.sftp:
@@ -99,17 +112,24 @@ class FTPUploadConnector(RemoteConnector):
             from http://stackoverflow.com/questions/10644608/create-missing-directories-in-ftplib-storbinary
         """
         if self.directory_exists(dir) is False: # (or negate, whatever you prefer for readability)
-            self.session.mkd(dir)
-        self.session.chdir(dir)
+            self.mkdir(dir)
+        self.chdir(dir)
     
     def directory_exists(self, dir):
         
-        filelist = []
-        self.session.retrlines('LIST',filelist.append)
+        filelist = self.listdir() 
+        current = self.getcwd()
+        try:
+            self.chdir(dir)
+            self.chdir(current)
+        except Exception:
+            return False
+        """
         for f in filelist:
             if f.split()[-1] == dir and f.upper().startswith('D'):
                 return True
         return False
+        """
         
     def upload_directory(self, directory): 
         """
@@ -129,9 +149,12 @@ class FTPUploadConnector(RemoteConnector):
         return directory
         
     def upload_file(self, file_name):
-        file = open(file_name, "rb")
-        self.session.storbinary("STOR " + file_name, file)   
-        file.close()
+        if self.sftp:
+            self.session.put(file_name, self.getcwd()+"/"+file_name)
+        else:
+            file = open(file_name, "rb")
+            self.session.storbinary("STOR " + file_name, file)   
+            file.close()
       
     def delete(self):
         """
@@ -156,7 +179,7 @@ class FTPUploadConnector(RemoteConnector):
         """
             Check if the given FTP item is a file or a directory
         """
-        current = session.pwd()
+        current = self.getcwd()
         try:
             self.chdir(name)
         except:
@@ -165,20 +188,67 @@ class FTPUploadConnector(RemoteConnector):
         self.chdir(current)
         return False
 
-    def delete_directory(self, path):
+    def getcwd(self):
+        if self.sftp:
+            return self.session.getcwd()
+        else :            
+            return self.session.pwd()
+            
+    def mkdir(self, name, path="."):
+        if self.sftp:
+            return self.session.mkdir(path+"/"+name)
+        else :            
+            return self.session.mkd(name) 
+    def rmdir(self, name):
+        if self.sftp:
+            return self.session.rmdir(name)
+        else :            
+            return self.session.rmd(name)
+    def delete_file(self, name):
+        if self.sftp:
+            return self.session.remove(name)
+        else :            
+            return self.session.delete(name)
         
-        directory = path.split("/")[-1]
+    def listdir(self, name="./"):
+        if self.sftp:
+            return self.session.listdir(name)
+        else :            
+            return self.session.nlst(name)
+            
+    def delete_directory(self, path="./"):
+        
         self.chdir(path)       
-        names = self.nlst(path)
+        names = self.listdir()
         for name in names:
             if self.is_file( name):
-                self.session.delete(name)
+                self.delete_file(name)
             else:
-                self.delete_directory(path+"/"+directory)
+                directory = path+"/"+name
+                print('d', directory)
+                self.delete_directory(directory)
 
         self.chdir("../")
-        self.session.rmd(directory)
+        self.rmdir(path)
     
+    def purge(self):
+        """
+            Remove all saves of a dataset from a given host
+        """
+        self.prepare_save()
+        self.get_connection() 
+        print(self.getcwd(), self.host['hostname'] )
+        self.delete_directory(self.dataset_name)
+        
+    def remove(self):
+        """
+            Remove a save from FTP host
+        """
+        self.prepare_save()
+        self.get_connection()        
+        self.chdir(self.dataset_name)
+        print(self.getcwd(), self.host['hostname'] )
+        self.delete_directory(self.dataset_save_id)
         
 class FTPUploadError(SaveError):
     pass
