@@ -28,7 +28,7 @@ class FTPUploadConnector(RemoteConnector):
         try:            
             self.connect()
             self.session.quit()
-            logger.info("FTP connection OK")
+            logger.info("{0} : FTP connection OK".format(self.host['hostname']))
             return True
         except Exception, e:
             
@@ -58,7 +58,6 @@ class FTPUploadConnector(RemoteConnector):
         self.prepare_save()
         self.get_connection()
         #self.session.cwd(self.get_or_create(self.remote_saves_directory))
-        print("remote", self.remote_saves_directory, "local", self.local_saves_directory)
         os.chdir(self.local_saves_directory)
         
         # check if dataset directory already exists on remote host
@@ -67,7 +66,6 @@ class FTPUploadConnector(RemoteConnector):
         os.chdir(self.dataset_name)
         # check if current save directory already exists on remote host
         try:
-            self.chdir(self.dataset_save_id)  
             os.chdir(self.dataset_save_id)
             logger.info("Uploading files...")
             self.upload_directory(os.getcwd())
@@ -83,7 +81,6 @@ class FTPUploadConnector(RemoteConnector):
         filelist = self.session.nlst(self.session.pwd()) 
         exists=False
         i = 0
-        print(filelist)
         for f in filelist:
             if directory_name == f.split("/")[-1]:
                 exists = True
@@ -114,7 +111,6 @@ class FTPUploadConnector(RemoteConnector):
         """
         
         self.chdir(directory.split('/')[-1])
-        print ('pwd', self.session.pwd())
         
         for root, dirs, files in os.walk(directory):
             os.chdir(directory)

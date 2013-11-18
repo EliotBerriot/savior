@@ -180,9 +180,10 @@ class Dataset():
             return False
         else:
             self.current_save_directory = self.create_directory(self.save_directory+"/"+self.savior.stamp_str)
-            for save in self.sections:
-                if not save == "global":
-                    
+            print('sections', self.sections)
+            for save in self.sections:            
+                if not save == "global":                    
+                    logger.info("{0} : saving {1}".format(self.name, save))
                     data_options = dict(self.settings.items(save))
                     
                     
@@ -207,7 +208,7 @@ class Dataset():
                         **kwargs 
                         )
                     connector.save()
-                    return True
+            return True
       
     def check_delay_between_saves(self, days):
         now = datetime.now()
