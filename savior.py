@@ -9,9 +9,6 @@ import shutil
 import smtplib
 from email.mime.text import MIMEText
 import logging
-from connectors.filesystem import FileSystemConnector
-from connectors.mysql import MySQLConnector
-from connectors.ftp import FTPConnector
 from connectors import mapping
 
 logging.basicConfig()
@@ -123,19 +120,19 @@ class Savior(object):
         self.settings = ConfigParser.ConfigParser()
         self.settings.read("settings.ini")
     
-        # Parse settings.ini
-        self.hosts = ConfigParser.ConfigParser()
-        self.hosts.read("hosts.ini")
-        
+        # Parse hosts.ini
+        self.hosts = {}
+        with open(os.path.join(os.getcwd(),'hosts.ini'),'r') as configfile: 
+            hosts = ConfigParser.ConfigParser()
+            hosts.readfp(configfile)
         # check connexion for each host, if needed
         
-        for host in self.hosts.sections():
-            options = dict(self.hosts.items(host))
-            
+        for host in hosts.sections():
+            options = dict(hosts.items(host))
+            self.hosts[host] = options
             # get connector instance from type setting
             connector = mapping.MAPPING[options["type"]](host_options=options)
             connector.check_connection()
-        
 class Dataset():
     def __init__(self,savior, path, config_file):
         self.savior = savior
@@ -164,20 +161,20 @@ class Dataset():
         self.global_settings['time_to_live'] = self.get_option('time_to_live')
         self.global_settings['days_between_saves'] = self.get_option('days_between_saves')
         self.global_settings['ftp_backup'] = self.get_option('ftp_backup')
+        
     def save(self):
         self.current_save_directory = self.create_directory(self.save_directory+"/"+self.savior.stamp_str)
-        print("Savior", self.savior_options)
-        print("Dataset", self.global_options)
         for save in self.sections:
             if not save == "global":
-                print(save)
                 kwargs = {
+                    "dataset_name": self.name,
                     "name":save,
                     "save_path":self.current_save_directory,
+                    "dataset_save_id":self.savior.stamp_str,
                     }
                 data_options = dict(self.settings.items(save))
                 if data_options.get("host", None):
-                    host_options = dict(self.savior.hosts.items(data_options["host"]))
+                    host_options = self.savior.hosts[data_options["host"]]
                 else:
                     host_options= {}
                 connector = mapping.MAPPING[data_options["type"]](
@@ -188,6 +185,27 @@ class Dataset():
                     **kwargs 
                     )
                 connector.save()
+        self.post_save()
+        
+    def post_save(self):
+        """
+            Called when dataset save process (tar, dumps, etc.) is done
+        """
+        ftp_backup = self.get_option('ftp_backup', []).split(',')
+        for host in ftp_backup:
+            host_options = self.savior.hosts[host]
+            kwargs = {
+                "dataset_name": self.name,
+                "local_saves_directory":self.savior.save_path, 
+                "dataset_save_id":self.savior.stamp_str, 
+                }
+            connector = mapping.MAPPING['ftpupload'](
+                    host_options=host_options,
+                    **kwargs 
+                    )
+            connector.upload()
+            
+            
       
     def get_option(self, name, default=None):
         """

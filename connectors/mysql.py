@@ -11,7 +11,6 @@ class MySQLConnector(DatabaseConnector):
         
     def save(self):
         super(MySQLConnector, self).save()
-        self.check_connection()
         with hide('running'):
             l = local(
                 "mysqldump -u {0} --password={1} {2} > {3}/{4}.sql".format(
@@ -27,8 +26,8 @@ class MySQLConnector(DatabaseConnector):
                 raise SaveError(self.dataset_name, l)
             else:
                 logger.info("{0}/{1} database has been saved".format(
-                    self.name, 
-                    self.database
+                    self.dataset_name,
+                    self.name,
                     )
                 )
                 

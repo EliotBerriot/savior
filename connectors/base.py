@@ -56,9 +56,11 @@ class BaseConnector(object):
         
     def prepare_save(self):
         self.prepare_connection()
-        #self.dataset_dave_id = self.data_options["dataset_save_id"]        
-        self.name = self.kwargs['name']
-        self.save_path = self.kwargs['save_path']
+        #self.dataset_save_id = self.data_options["dataset_save_id"]        
+        self.name = self.kwargs.get('name', None)
+        self.dataset_name = self.kwargs.get('dataset_name')
+        self.save_path = self.kwargs.get('save_path', None)
+        self.dataset_save_id = self.kwargs.get('dataset_save_id')
         
     def save(self):
         self.prepare_save()
@@ -80,7 +82,6 @@ class CredentialsConnector(BaseConnector):
     """
     credentials = {}
     def set_credentials(self):
-        print("set credentials")
         self.credentials['username'] = self.get_host_option('username')
         self.credentials['password'] = self.get_host_option('password')
 
@@ -111,9 +112,9 @@ class DatabaseConnector(RemoteConnector):
         self.database = self.data_options.get('database', None)
 
 class SaveError(Exception):
-    def __init__(self, name, e):
-        self.message = """{0} : Error while saving. Autosave is cancelling. Error
-            : {1}""".format(name, e)
+    def __init__(self, e):
+        self.message = """Error while saving. Autosave is cancelling. Error
+            : {0}""".format( e)
         logger.critical(self.message)
     def __str__(self):
         return self.message

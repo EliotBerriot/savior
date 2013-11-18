@@ -2,12 +2,12 @@ from base import RemoteConnector, SaveError, ConnectionError
 from fabric.api import local, hide, settings
 import ftplib
 import logging
-
+import sys, os
 logger = logging.getLogger('autosave')
 
-class FTPConnector(RemoteConnector):
+class FTPUploadConnector(RemoteConnector):
     """
-        A connector designed to save FTP files or to backup files to FTP server
+        A connector designed to backup files to FTP server
     """
     remote_saves_directory="" 
     local_saves_directory=""
@@ -19,19 +19,24 @@ class FTPConnector(RemoteConnector):
     def set_local_saves_directory(self, local_saves_directory):
         self.local_saves_directory = local_saves_directory
     
+    def prepare_connection(self):
+        super(FTPUploadConnector, self).prepare_connection()
+        self.local_saves_directory = self.kwargs.get('local_saves_directory', None)
+        self.remote_saves_directory = self.get_host_option('save_path', './')
     def check_connection(self):       
-        super(FTPConnector, self).prepare_connection()
+        super(FTPUploadConnector, self).check_connection()
         try:            
             self.connect()
             self.session.quit()
             logger.info("FTP connection OK")
             return True
         except Exception, e:
-            message = """Can't connect to FTP server using given
-                credentials. Error : {0}""".format(str(e))
+            
+            message = """Can't connect to FTP server using given credentials. Error : {0}""".format(str(e))
             raise ConnectionError(message)
             return False
-    def connect(self):        
+    def connect(self): 
+        self.prepare_connection()
         self.session = ftplib.FTP(
                 self.host["hostname"],
                 self.credentials["username"],
@@ -50,20 +55,27 @@ class FTPConnector(RemoteConnector):
         self.session.cwd(self.remote_saves_directory)
         
     def upload(self):
+        self.prepare_save()
         self.get_connection()
+        #self.session.cwd(self.get_or_create(self.remote_saves_directory))
+        print("remote", self.remote_saves_directory, "local", self.local_saves_directory)
         os.chdir(self.local_saves_directory)
         
         # check if dataset directory already exists on remote host
-        self.session.cwd(self.get_or_create(self.dataset_name))
-        
+        #self.session.cwd(self.get_or_create(self.dataset_name))
+        self.chdir(self.dataset_name)
+        os.chdir(self.dataset_name)
         # check if current save directory already exists on remote host
         try:
-            self.session.mkd(self.dataset_save_id)
-            self.session.cwd(self.dataset_save_id)            
+            self.chdir(self.dataset_save_id)  
+            os.chdir(self.dataset_save_id)
             logger.info("Uploading files...")
             self.upload_directory(os.getcwd())
             self.session.quit()
         except Exception, e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno)
             raise FTPUploadError(e)
                 
     def get_or_create(self, directory_name):
@@ -74,6 +86,7 @@ class FTPConnector(RemoteConnector):
         filelist = self.session.nlst(self.session.pwd()) 
         exists=False
         i = 0
+        print(filelist)
         for f in filelist:
             if directory_name == f.split("/")[-1]:
                 exists = True
@@ -81,14 +94,31 @@ class FTPConnector(RemoteConnector):
         if not exists:
             self.session.mkd(directory_name)
         return directory_name
+     
+    def chdir(self, dir): 
+        """
+            from http://stackoverflow.com/questions/10644608/create-missing-directories-in-ftplib-storbinary
+        """
+        if self.directory_exists(dir) is False: # (or negate, whatever you prefer for readability)
+            self.session.mkd(dir)
+        self.session.cwd(dir)
+    
+    def directory_exists(self, dir):
         
+        filelist = []
+        self.session.retrlines('LIST',filelist.append)
+        for f in filelist:
+            if f.split()[-1] == dir and f.upper().startswith('D'):
+                return True
+        return False
     def upload_directory(self, directory): 
         """
             recursively upload local directory on FTP host
         """
-        print(directory)
-        self.session.mkd(directory)
-        self.session.cwd(directory)
+        
+        self.chdir(directory.split('/')[-1])
+        print ('pwd', self.session.pwd())
+        
         for root, dirs, files in os.walk(directory):
             os.chdir(directory)
             for file in files:
