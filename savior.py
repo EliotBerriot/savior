@@ -45,7 +45,8 @@ class Savior(object):
         # self.ftp_backup = ftp_backup        
         # stamp used for logs and directory names
         self.stamp = datetime.now()
-        self.stamp_str =  self.stamp.strftime(self.settings.get("global", "folder_name"))
+        self.stamp_setting = self.settings.get("global", "folder_name")
+        self.stamp_str =  self.stamp.strftime(self.stamp_setting)
         self.log=None
         self.log_setup()        
         
@@ -107,9 +108,16 @@ class Savior(object):
         logger.addHandler(fh)
  
     def save(self):
+        self.saved_datasets = []
         for ds in self.datasets:
-            ds.save()
+            saved = ds.save()
+            if saved :
+                self.saved_datasets.append(ds)
+        for ds in self.saved_datasets:
+            ds.post_save()
         
+     
+            
     def check_config(self):
         """
             Check if settings and hosts.ini are correctly written, 
@@ -163,31 +171,69 @@ class Dataset():
         self.global_settings['ftp_backup'] = self.get_option('ftp_backup')
         
     def save(self):
-        self.current_save_directory = self.create_directory(self.save_directory+"/"+self.savior.stamp_str)
-        for save in self.sections:
-            if not save == "global":
-                kwargs = {
-                    "dataset_name": self.name,
-                    "name":save,
-                    "save_path":self.current_save_directory,
-                    "dataset_save_id":self.savior.stamp_str,
-                    }
-                data_options = dict(self.settings.items(save))
-                if data_options.get("host", None):
-                    host_options = self.savior.hosts[data_options["host"]]
+        days_between_saves = int(self.get_option(
+            name="days_between_saves",
+            )
+        )
+        if not self.check_delay_between_saves(days_between_saves):
+            logger.info("{0} : last save is recent enough, no need to create a new one.".format(self.name))
+            return False
+        else:
+            self.current_save_directory = self.create_directory(self.save_directory+"/"+self.savior.stamp_str)
+            for save in self.sections:
+                if not save == "global":
+                    
+                    data_options = dict(self.settings.items(save))
+                    
+                    
+                    logger.info("{0} : last save is too old, creating a new one.".format( self.name))
+                
+                    kwargs = {
+                        "dataset_name": self.name,
+                        "name":save,
+                        "save_path":self.current_save_directory,
+                        "dataset_save_id":self.savior.stamp_str,
+                        }
+                        
+                    if data_options.get("host", None):
+                        host_options = self.savior.hosts[data_options["host"]]
+                    else:
+                        host_options= {}
+                    connector = mapping.MAPPING[data_options["type"]](
+                        data_options = data_options,
+                        dataset_options=self.global_options,
+                        savior_options=self.savior_options, 
+                        host_options=host_options,
+                        **kwargs 
+                        )
+                    connector.save()
+                    return True
+      
+    def check_delay_between_saves(self, days):
+        now = datetime.now()
+        try:        
+            saves = os.walk(self.save_directory).next()[1]
+            s = saves[0] # check if directory is empty
+        except Exception, e:
+            logger.info("There are no saves for dataset {0}".format(self.name))
+            return True
+        else:            
+            most_recent_save = () # [name, datetime]
+            for save in saves:          
+                save_datetime = datetime.strptime(save, self.savior.stamp_setting)
+                if len(most_recent_save) == 0:
+                    most_recent_save = (save, save_datetime)
                 else:
-                    host_options= {}
-                connector = mapping.MAPPING[data_options["type"]](
-                    data_options = data_options,
-                    dataset_options=self.global_options,
-                    savior_options=self.savior_options, 
-                    host_options=host_options,
-                    **kwargs 
-                    )
-                connector.save()
-        self.post_save()
-        
+                    if save_datetime > most_recent_save[1]:
+                        most_recent_save = (save, save_datetime)
+            limit = now - timedelta(days)
+            if most_recent_save[1] < limit  :
+                return True
+            else:
+                return False
+                
     def post_save(self):
+         
         """
             Called when dataset save process (tar, dumps, etc.) is done
         """
@@ -204,9 +250,7 @@ class Dataset():
                     **kwargs 
                     )
             connector.upload()
-            
-            
-      
+                
     def get_option(self, name, default=None):
         """
             Look for option in  global_options
@@ -218,9 +262,8 @@ class Dataset():
         elif self.savior_options.get(name, None):   
             return self.savior_options[name]
         else:
-            return default
+            return default      
             
-    
     def create_directory(self, directory): 
         if not os.path.exists(directory):
             os.mkdir(directory)
@@ -228,8 +271,7 @@ class Dataset():
         
 class ParseConfigError(Exception):
     def __init__(self, name, e):
-        self.message = """{0} : Error while parsing config file. Error :
-                            {1}""".format(name, e)
+        self.message = """{0} : Error while parsing config file. Error : {1}""".format(name, e)
         logger.critical(self.message)
     def __str__(self):
         return self.message
