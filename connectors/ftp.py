@@ -55,7 +55,6 @@ class FTPUploadConnector(RemoteConnector):
             transport.connect(username = username, password = password)
             self.session = paramiko.SFTPClient.from_transport(transport)
         else:
-            print('standard ftp')
             self.session = paramiko.FTPClient.from_transport(transport)
         self.init_connection()
      
