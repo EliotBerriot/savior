@@ -41,4 +41,9 @@ class FileSystemConnector(BaseConnector):
                 raise SaveError(self.name, l)
                 return False
             else:
+                logger.info("{0}/{1} files have been tared".format(
+                    self.dataset_name,
+                    self.name,
+                    )
+                )
                 return True
