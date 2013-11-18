@@ -19,7 +19,8 @@ class FTPConnector(RemoteConnector):
     def set_local_saves_directory(self, local_saves_directory):
         self.local_saves_directory = local_saves_directory
     
-    def check_connection(self):        
+    def check_connection(self):       
+        super(FTPConnector, self).prepare_connection()
         try:            
             self.connect()
             self.session.quit()
@@ -38,6 +39,8 @@ class FTPConnector(RemoteConnector):
             )
         self.init_connection()
         
+    def init_connection(self):
+        self.session.cwd(self.remote_saves_directory)
     def get_connection(self):
         """
             Get FTP session or create it
