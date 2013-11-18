@@ -212,7 +212,7 @@ class Dataset():
     def check_delay_between_saves(self, days):
         now = datetime.now()
         try:        
-            saves = os.walk(self.save_directory).next()[1]
+            saves = self.get_all_saves()
             s = saves[0] # check if directory is empty
         except Exception, e:
             logger.info("There are no saves for dataset {0}".format(self.name))
@@ -249,8 +249,9 @@ class Dataset():
                     host_options=host_options,
                     **kwargs 
                     )
-            connector.upload()
-                
+            connector.upload()            
+           
+        self.purge()
     def get_option(self, name, default=None):
         """
             Look for option in  global_options
@@ -268,7 +269,39 @@ class Dataset():
         if not os.path.exists(directory):
             os.mkdir(directory)
         return directory
-        
+    def purge(self):
+        """
+            Remove all saves for this dataset
+        """
+        for save in self.get_all_saves():
+            self.remove(save, purge=True)
+    def remove(self, dataset_save_id, purge=False):
+        """
+            remove a given save from saves folder and from hosts
+        """
+        shutil.rmtree(self.save_directory+'/'+dataset_save_id)
+        ftp_backup = self.get_option('ftp_backup', []).split(',')
+        for host in ftp_backup:
+            host_options = self.savior.hosts[host]
+            kwargs = {
+                "dataset_name": self.name,
+                "local_saves_directory":self.savior.save_path, 
+                "dataset_save_id":self.savior.stamp_str, 
+                }
+            connector = mapping.MAPPING['ftpupload'](
+                    host_options=host_options,
+                    **kwargs 
+                    )
+            connector.remove()
+            if purge:
+                connector.purge()
+            
+    def get_all_saves(self):
+        """
+            return a list of all saves for current dataset
+        """
+        saves = os.walk(self.save_directory).next()[1]
+        return saves
 class ParseConfigError(Exception):
     def __init__(self, name, e):
         self.message = """{0} : Error while parsing config file. Error : {1}""".format(name, e)
