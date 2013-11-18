@@ -97,11 +97,14 @@ class RemoteConnector(CredentialsConnector):
     host = {}
     def set_host(self):
         self.host['hostname'] = self.get_host_option('hostname')       
-        self.host['port'] = self.get_host_option('port')
+        self.host['port'] = int(self.get_host_option('port', self.get_default_port()))
         
     def prepare_connection(self):
         super(RemoteConnector, self).prepare_connection()
         self.set_host()
+        
+    def get_default_port(self):
+        return 0
 class DatabaseConnector(RemoteConnector):
     """
         A connector dedicated to save process that involve a database
