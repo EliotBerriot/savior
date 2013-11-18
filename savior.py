@@ -4,7 +4,6 @@ import os
 import ConfigParser
 from datetime import datetime, timedelta
 from fabric.api import local, hide, settings
-import ftplib
 import shutil
 import smtplib
 from email.mime.text import MIMEText
