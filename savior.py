@@ -12,7 +12,9 @@ import logging
 from connectors.filesystem import FileSystemConnector
 from connectors.mysql import MySQLConnector
 from connectors.ftp import FTPConnector
+from connectors import mapping
 
+logging.basicConfig()
 logger = logging.getLogger('autosave')
 logger.setLevel(logging.DEBUG)
 
@@ -32,7 +34,7 @@ class Savior(object):
         self.settings = None  
         self.hosts = None
         
-        self.get_config()
+        self.check_config()
         # if force_safe is set to True, days_between_saves option in settings
         # will be ignored
         self.force_save = force_save
@@ -43,11 +45,10 @@ class Savior(object):
         # enable databases dump
         # self.save_databases = save_databases
         # enable ftp backup
-        # self.ftp_backup = ftp_backup
-        
+        # self.ftp_backup = ftp_backup        
         # stamp used for logs and directory names
         self.stamp = datetime.now()
-        
+        self.stamp_str =  self.stamp.strftime(self.settings.get("global", "folder_name"))
         self.log=None
         self.log_setup()        
         
@@ -71,24 +72,25 @@ class Savior(object):
         self.datasets_path = self.root_path+"/datasets" 
         self.datasets = []
         datasets_names = []
-        
+        [f for f in os.listdir('.') if os.path.isfile(f)]
         #get name of datasets to save
         if self.datasets_to_save=="all":
-            for file_name in os.listdir(self.datasets_path): 
-                datasets_names.append(file_name)
+            os.chdir(self.datasets_path)
+            datasets_names = [f for f in os.listdir("./") if os.path.isfile(f)]
+            os.chdir(self.root_path)
         # save a single dataset
         else:
             datasets_names.append(self.datasets_to_save)
            
         # instantiate datasets objects
-        for file_name in datasets_names:
-            ds = Dataset(self.datasets_path, file_name)
+        for file_name in datasets_names:            
+            ds = Dataset(self, self.datasets_path, file_name)
             self.datasets.append(ds)
             
     def log_setup(self):
         # create file handler which logs even debug messages
         self.log = 'logs/{0}.log'.format(
-            self.stamp.strftime(self.settings.get("global", "folder_name"))
+            self.stamp_str
             )
         fh = logging.FileHandler(self.log)
         fh.setLevel(logging.DEBUG)
@@ -111,7 +113,7 @@ class Savior(object):
         for ds in self.datasets:
             ds.save()
         
-    def get_config(self):
+    def check_config(self):
         """
             Check if settings and hosts.ini are correctly written, 
             check credentials and hosts access
@@ -125,33 +127,19 @@ class Savior(object):
         self.hosts = ConfigParser.ConfigParser()
         self.hosts.read("hosts.ini")
         
-        # check if ftp_backup settings correspond to a real host in host files
-        if self.settings.has_option("save","ftp_backup"):
-            ftp_backup = self.settings.get("save","ftp_backup").split(",")
-            for h in ftp_backup:
-                try:
-                    credentials = {
-                        "username":self.hosts.get(h,"username"),
-                        "password":self.hosts.get(h,"password"),
-                    }
-                    host = {   
-                        "username":self.hosts.get(h,"hostname"),
-                    }
-                    if self.hosts.has_option(h, "port"):
-                        host["port"] = self.hosts.get(h, "port")
-                    
-                    ftp_connector = FTPConnector()
-                    ftp_connector.set_credentials(credentials)
-                    ftp_connector.set_host(host)
-                                    
-                    ftp_connector.check_connection()
-                except Exception, e:
-                    logger.critical(e)
-                    
-        #
+        # check connexion for each host, if needed
+        
+        for host in self.hosts.sections():
+            options = dict(self.hosts.items(host))
+            
+            # get connector instance from type setting
+            connector = mapping.MAPPING[options["type"]](host_options=options)
+            connector.check_connection()
         
 class Dataset():
-    def __init__(self, path, config_file):
+    def __init__(self,savior, path, config_file):
+        self.savior = savior
+        self.savior_options = dict(self.savior.settings.items('global'))
         self.config = config_file
         self.settings = ConfigParser.ConfigParser()
         config_path = path+"/"+self.config
@@ -160,15 +148,66 @@ class Dataset():
             return None
         try:
             self.settings.read(config_path)
+            self.get_global_config()
         except Exception, e:
-            raise ConfigParseError(self.config, str(e))
+            raise ParseConfigError(self.config, str(e))
             return None
-        self.sections = self.settings.sections()
+        self.sections = self.settings.sections()            
         self.name = config_file        
-        
+        self.save_directory = self.create_directory(self.savior.save_path+"/"+self.name)
+    def get_global_config(self):
+        """
+            get settings for global section of dataset files
+        """
+        self.global_options = dict(self.settings.items("global"))
+        self.global_settings= {}
+        self.global_settings['time_to_live'] = self.get_option('time_to_live')
+        self.global_settings['days_between_saves'] = self.get_option('days_between_saves')
+        self.global_settings['ftp_backup'] = self.get_option('ftp_backup')
     def save(self):
-        
+        self.current_save_directory = self.create_directory(self.save_directory+"/"+self.savior.stamp_str)
+        print("Savior", self.savior_options)
+        print("Dataset", self.global_options)
+        for save in self.sections:
+            if not save == "global":
+                print(save)
+                kwargs = {
+                    "name":save,
+                    "save_path":self.current_save_directory,
+                    }
+                data_options = dict(self.settings.items(save))
+                if data_options.get("host", None):
+                    host_options = dict(self.savior.hosts.items(data_options["host"]))
+                else:
+                    host_options= {}
+                connector = mapping.MAPPING[data_options["type"]](
+                    data_options = data_options,
+                    dataset_options=self.global_options,
+                    savior_options=self.savior_options, 
+                    host_options=host_options,
+                    **kwargs 
+                    )
+                connector.save()
+      
+    def get_option(self, name, default=None):
+        """
+            Look for option in  global_options
+            If not found, look in savior_options
+            else : return default value
+        """
+        if self.global_options.get(name, None):
+            return self.global_options[name]
+        elif self.savior_options.get(name, None):   
+            return self.savior_options[name]
+        else:
+            return default
             
+    
+    def create_directory(self, directory): 
+        if not os.path.exists(directory):
+            os.mkdir(directory)
+        return directory
+        
 class ParseConfigError(Exception):
     def __init__(self, name, e):
         self.message = """{0} : Error while parsing config file. Error :
