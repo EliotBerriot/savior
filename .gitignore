@@ -1,5 +1,5 @@
 # Project settings and static files
-saves
+saves/*
 !saves/.empty
 env_settings.py
 settings.ini
