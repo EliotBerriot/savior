@@ -44,10 +44,8 @@ class FTPUploadConnector(RemoteConnector):
             self.close_connection()
             self.log("connection OK")
             return True
-        except Exception, e:
-            
-            message = """can't connect to server using given credentials. Error : {0}""".format(str(e))
-            raise ConnectionError(message)
+        except Exception, e:            
+            raise ConnectionError(str(e))
             return False
     def connect(self):         
         self.prepare_connection()

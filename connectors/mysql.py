@@ -25,7 +25,7 @@ class MySQLConnector(DatabaseConnector):
             )
 
             if l.return_code == 2:
-                raise SaveError(self.dataset_name, l)
+                raise SaveError(l)
             else:
                 self.log("database [{0}] has been dumped".format(
                     self.name,
@@ -42,7 +42,7 @@ class MySQLConnector(DatabaseConnector):
             )
             if l.return_code == 2:
                 raise ConnectionError(
-                    "can't connect to database '{1}'".format(self.database)
+                    "can't connect to database '{0}'".format(self.database)
                     )
                 return False
             else:

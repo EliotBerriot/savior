@@ -4,6 +4,7 @@ sys.path.append("..")
 import logging
 
 from autosave.utils import LoggerAware
+from autosave.errors import SaviorError
 class BaseConnector(LoggerAware):
     """
         A connector is designed to save a particular type of     
@@ -118,17 +119,10 @@ class DatabaseConnector(RemoteConnector):
         super(DatabaseConnector, self).prepare_connection()
         self.database = self.data_options.get('database', None)
 
-class SaveError(Exception):
-    def __init__(self, e):
-        self.message = """Error while saving. Autosave is cancelling. Error
-            : {0}""".format( e)
-        logger.critical(self.message)
-    def __str__(self):
-        return self.message
+class SaveError(SaviorError):
+    def set_message(self, message):
+        self.message = """Error while saving : {0}""".format(message)
 
-class ConnectionError(Exception):
-    def __init__(self, message):
-        self.message = message
-        logger.critical(self.message)
-    def __str__(self):
-        return self.message
+class ConnectionError(SaviorError):
+    def set_message(self, message):
+        self.message = """Error while connecting : {0}""".format(message)
