@@ -1,6 +1,6 @@
 
 import logging
-
+import sys
 class LoggerAware(object):
     """
         This class provide facilities to log messages
@@ -25,7 +25,7 @@ class LoggerAware(object):
             '%(asctime)s - %(levelname)s - %(message)s'
             )
         console_formatter = logging.Formatter(
-            '%(levelname)s - %(message)s'
+            '%(message)s'
             )
         ch.setFormatter(console_formatter)
         fh.setFormatter(file_formatter)
@@ -36,7 +36,7 @@ class LoggerAware(object):
         
         
     def get_logger(self):
-        logging.basicConfig()
+        logging.basicConfig(stream=sys.stdout)
         self.logger = logging.getLogger(self.logger_name)
         return self.logger
         
@@ -48,6 +48,8 @@ class LoggerAware(object):
             self.logger.info(message)
         elif level in ["warning", "WARNING"]:
             self.logger.warning(message)
+        elif level in ["error", "ERROR"]:
+            self.logger.error(message)
         elif level in ["critical", "CRITICAL"]:
             self.logger.critical(message)
         else:

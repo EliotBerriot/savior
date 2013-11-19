@@ -1,7 +1,7 @@
  # -*- coding: utf-8 -*-
 import sys, os
 
-from savior import Savior, ParseConfigError
+from main import Savior, ParseConfigError
 from fabric.api import local, run, cd, env, prefix
 import logging
 import env_settings

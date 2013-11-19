@@ -35,7 +35,7 @@ class FileSystemConnector(BaseConnector):
                 )
             )
             if l.return_code == 2:
-                raise SaveError(self.name, l)
+                raise SaveError(l)
                 return False
             else:
                 self.log("[{0}] files have been tared".format(
