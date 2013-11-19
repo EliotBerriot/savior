@@ -1,4 +1,5 @@
  # -*- coding: utf-8 -*-
+import sys, os
 
 from savior import Savior, ParseConfigError
 from fabric.api import local, run, cd, env, prefix
@@ -9,9 +10,8 @@ REMOTE_WORKING_DIR = env_settings.REMOTE_WORKING_DIR
 env.hosts = env_settings.HOSTS
 env.user = env_settings.USER
 
-logger = logging.getLogger('autosave')
+logger = logging.getLogger('savior')
 logger.setLevel(logging.DEBUG)
-
 def autosave(datasets="all", force_save=False):
     try:
         a = Savior(datasets, force_save)

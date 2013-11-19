@@ -2,9 +2,7 @@ from base import RemoteConnector, SaveError, ConnectionError
 from fabric.api import local, hide, settings
 import paramiko
 import ftplib
-import logging
 import sys, os
-logger = logging.getLogger('autosave')
 
 class FTPUploadConnector(RemoteConnector):
     """
@@ -38,16 +36,17 @@ class FTPUploadConnector(RemoteConnector):
         self.local_saves_directory = self.kwargs.get('local_saves_directory', None)
         self.remote_saves_directory = self.get_host_option('save_path', './')
         self.sftp = self.convert_to_boolean(self.get_host_option('sftp', False))
+        self.set_logger_message_prefix('FTP Host [{0}] - '.format(self.host['hostname']))
     def check_connection(self):       
         super(FTPUploadConnector, self).check_connection()
         try:            
             self.connect()
             self.close_connection()
-            logger.info("{0} : FTP connection OK".format(self.host['hostname']))
+            self.log("connection OK")
             return True
         except Exception, e:
             
-            message = """Can't connect to FTP server using given credentials. Error : {0}""".format(str(e))
+            message = """can't connect to server using given credentials. Error : {0}""".format(str(e))
             raise ConnectionError(message)
             return False
     def connect(self):         
@@ -94,13 +93,11 @@ class FTPUploadConnector(RemoteConnector):
         self.get_or_create(self.dataset_name)
         os.chdir(self.dataset_name)
         # check if current save directory already exists on remote host
-        #try:
         os.chdir(self.dataset_save_id)
-        logger.info("Uploading files to {0} ...".format(self.host['hostname']))
+        self.log("uploading files...")
         self.upload_directory(os.getcwd())
         self.close_connection()
-        #except Exception, e:
-        #    raise FTPUploadError(e)
+        
      
     def chdir(self, path):
         if self.sftp:
@@ -169,11 +166,11 @@ class FTPUploadConnector(RemoteConnector):
         # remote_path looks like /var/www/mysavesfolder/myblog/11-09-2013  
         try:
             self.delete_directory(remote_path)
-            logger.info(
-                "{} directory removed from FTP server.".format(remote_path)
+            self.log(
+                "{0} directory removed server".format(remote_path)
                 )
         except Exception, e:
-            logger.debug("Can't remove {0} from FTP server".format(remote_path))
+            self.log("can't remove {0} from server".format(remote_path), "warning")
 
     def is_file(self, name):
         """
@@ -217,19 +214,26 @@ class FTPUploadConnector(RemoteConnector):
             return self.session.nlst(name)
             
     def delete_directory(self, path="./"):
-        
-        self.chdir(path)       
-        names = self.listdir()
-        for name in names:
-            if self.is_file( name):
-                self.delete_file(name)
-            else:
-                directory = path+"/"+name
-                print('d', directory)
-                self.delete_directory(directory)
+         
+        try:
+            self.log(
+                "removing {0}...".format(self.getcwd()+"/"+path)
+                )
+            self.chdir(path) 
+            names = self.listdir()
+            for name in names:
+                if self.is_file( name):
+                    self.delete_file(name)
+                else:
+                    directory = name
+                    self.delete_directory(directory)
 
-        self.chdir("../")
-        self.rmdir(path)
+            self.chdir("../")
+            self.rmdir(path)
+        except Exception, e:
+            self.log(
+                "can't remove {0} : path does not exist or permission denied".format(self.getcwd()+"/"+path, "warning")
+                )
     
     def purge(self):
         """
@@ -237,7 +241,6 @@ class FTPUploadConnector(RemoteConnector):
         """
         self.prepare_save()
         self.get_connection() 
-        print(self.getcwd(), self.host['hostname'] )
         self.delete_directory(self.dataset_name)
         
     def remove(self):
@@ -247,7 +250,6 @@ class FTPUploadConnector(RemoteConnector):
         self.prepare_save()
         self.get_connection()        
         self.chdir(self.dataset_name)
-        print(self.getcwd(), self.host['hostname'] )
         self.delete_directory(self.dataset_save_id)
         
 class FTPUploadError(SaveError):

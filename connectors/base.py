@@ -1,8 +1,10 @@
-import logging
-logger = logging.getLogger('autosave')
-logger.setLevel(logging.DEBUG)
+import sys
 
-class BaseConnector(object):
+sys.path.append("..")
+import logging
+
+from autosave.utils import LoggerAware
+class BaseConnector(LoggerAware):
     """
         A connector is designed to save a particular type of     
         data (email, database, local filesystem...)
@@ -22,6 +24,7 @@ class BaseConnector(object):
         self.savior_options = savior_options
         self.host_options = host_options
         self.kwargs = kwargs
+        self.get_logger()
         
     def get_dataset_option(self, name, default=None):
         """
@@ -59,6 +62,7 @@ class BaseConnector(object):
         #self.dataset_save_id = self.data_options["dataset_save_id"]        
         self.name = self.kwargs.get('name', None)
         self.dataset_name = self.kwargs.get('dataset_name')
+        self.set_logger_message_prefix('Dataset [{0}] - '.format(self.dataset_name))
         self.save_path = self.kwargs.get('save_path', None)
         self.dataset_save_id = self.kwargs.get('dataset_save_id')
         
