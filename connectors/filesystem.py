@@ -1,9 +1,6 @@
 from base import BaseConnector, SaveError
 from fabric.api import local, hide, settings
-import logging
 import os
-
-logger = logging.getLogger('autosave')
 
 class FileSystemConnector(BaseConnector):
     """
@@ -30,7 +27,7 @@ class FileSystemConnector(BaseConnector):
         for x in self.exclude:
             exclude_param+='--exclude="{0}" '.format(x)
             
-        with settings(warn_only=True):
+        with hide('everything'):
             l = local('tar -cf "{0}.tar" {1} "{2}"'.format(
                 self.get_save_path(),
                 exclude_param, 
@@ -41,8 +38,7 @@ class FileSystemConnector(BaseConnector):
                 raise SaveError(self.name, l)
                 return False
             else:
-                logger.info("{0}/{1} files have been tared".format(
-                    self.dataset_name,
+                self.log("[{0}] files have been tared".format(
                     self.name,
                     )
                 )

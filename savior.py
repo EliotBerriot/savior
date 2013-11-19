@@ -1,20 +1,16 @@
  # -*- coding: utf-8 -*-
 
-import os
+import os, sys
 import ConfigParser
 from datetime import datetime, timedelta
 from fabric.api import local, hide, settings
 import shutil
 import smtplib
 from email.mime.text import MIMEText
-import logging
 from connectors import mapping
+from utils import LoggerAware
 
-logging.basicConfig()
-logger = logging.getLogger('autosave')
-logger.setLevel(logging.DEBUG)
-
-class Savior(object):
+class Savior(LoggerAware):
     """
         The main class of Savior project
     """
@@ -29,8 +25,9 @@ class Savior(object):
         
         self.settings = None  
         self.hosts = None
-        
-        self.check_config()
+        # Parse settings.ini
+        self.settings = ConfigParser.ConfigParser()
+        self.settings.read("settings.ini")
         # if force_safe is set to True, days_between_saves option in settings
         # will be ignored
         self.force_save = force_save
@@ -46,8 +43,10 @@ class Savior(object):
         self.stamp = datetime.now()
         self.stamp_setting = self.settings.get("global", "folder_name")
         self.stamp_str =  self.stamp.strftime(self.stamp_setting)
-        self.log=None
-        self.log_setup()        
+        self.log_setup()
+        
+        
+        self.check_config()
         
         # path to the current script
         self.root_path = os.path.dirname(os.path.realpath(__file__))
@@ -86,46 +85,32 @@ class Savior(object):
             
     def log_setup(self):
         # create file handler which logs even debug messages
-        self.log = 'logs/{0}.log'.format(
+        self.log_file = 'logs/{0}.log'.format(
             self.stamp_str
             )
-        fh = logging.FileHandler(self.log)
-        fh.setLevel(logging.DEBUG)
-        
-        # create console handler with a higher log level
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
-        
-        # create formatter and add it to the handlers
-        formatter = logging.Formatter(
-            '%(asctime)s - %(levelname)s - %(message)s'
-            )
-        ch.setFormatter(formatter)
-        fh.setFormatter(formatter)
-        # add the handlers to logger
-        logger.addHandler(ch)
-        logger.addHandler(fh)
+        self.init_logger()
  
     def save(self):
+        self.log("saving {0} datasets...".format(len(self.datasets)))
         self.saved_datasets = []
         for ds in self.datasets:
             saved = ds.save()
             if saved :
                 self.saved_datasets.append(ds)
-        for ds in self.saved_datasets:
-            ds.post_save()
+        self.log("save process ended : {0} datasets have been saved".format(len(self.saved_datasets)))
         
      
-            
+    def purge(self):
+        self.log("purging {0} datasets...".format(len(self.datasets)))
+        for ds in self.datasets:
+            ds.purge()
+        self.log("purge process ended".format(len(self.saved_datasets)))
+        
     def check_config(self):
         """
             Check if settings and hosts.ini are correctly written, 
             check credentials and hosts access
         """
-        
-        # Parse settings.ini
-        self.settings = ConfigParser.ConfigParser()
-        self.settings.read("settings.ini")
     
         # Parse hosts.ini
         self.hosts = {}
@@ -140,24 +125,28 @@ class Savior(object):
             # get connector instance from type setting
             connector = mapping.MAPPING[options["type"]](host_options=options)
             connector.check_connection()
-class Dataset():
+class Dataset(LoggerAware):
     def __init__(self,savior, path, config_file):
         self.savior = savior
         self.savior_options = dict(self.savior.settings.items('global'))
         self.config = config_file
         self.settings = ConfigParser.ConfigParser()
         config_path = path+"/"+self.config
+        self.get_logger()
+        
         if not os.path.exists(config_path):
             raise ParseConfigError(self.config, "File does not exist")
             return None
         try:
             self.settings.read(config_path)
             self.get_global_config()
+            
         except Exception, e:
             raise ParseConfigError(self.config, str(e))
             return None
         self.sections = self.settings.sections()            
-        self.name = config_file        
+        self.name = config_file  
+        self.set_logger_message_prefix('Dataset [{0}] - '.format(self.name))
         self.save_directory = self.create_directory(self.savior.save_path+"/"+self.name)
     def get_global_config(self):
         """
@@ -168,25 +157,25 @@ class Dataset():
         self.global_settings['time_to_live'] = self.get_option('time_to_live')
         self.global_settings['days_between_saves'] = self.get_option('days_between_saves')
         self.global_settings['ftp_backup'] = self.get_option('ftp_backup')
-        
+     
     def save(self):
+        self.log("beginning of save process...")
         days_between_saves = int(self.get_option(
             name="days_between_saves",
             )
         )
         if not self.check_delay_between_saves(days_between_saves):
-            logger.info("{0} : last save is recent enough, no need to create a new one.".format(self.name))
+            self.log("last save is recent enough, no need to create a new one")
             return False
         else:
             self.current_save_directory = self.create_directory(self.save_directory+"/"+self.savior.stamp_str)
-            print('sections', self.sections)
             for save in self.sections:            
                 if not save == "global":                    
-                    logger.info("{0} : saving {1}".format(self.name, save))
+                    self.log("saving [{0}]...".format( save))
                     data_options = dict(self.settings.items(save))
                     
                     
-                    logger.info("{0} : last save is too old, creating a new one.".format( self.name))
+                    self.log("last save is too old, creating a new one")
                 
                     kwargs = {
                         "dataset_name": self.name,
@@ -207,7 +196,12 @@ class Dataset():
                         **kwargs 
                         )
                     connector.save()
-            return True
+                    self.log("[{0}] successfully saved".format(save))
+            if self.post_save():
+                self.log("save process successfully ended")
+                return True
+            else:
+                return False           
       
     def check_delay_between_saves(self, days):
         now = datetime.now()
@@ -215,7 +209,7 @@ class Dataset():
             saves = self.get_all_saves()
             s = saves[0] # check if directory is empty
         except Exception, e:
-            logger.info("There are no saves for dataset {0}".format(self.name))
+            self.log("no saves found for current dataset")
             return True
         else:            
             most_recent_save = () # [name, datetime]
@@ -249,9 +243,9 @@ class Dataset():
                     host_options=host_options,
                     **kwargs 
                     )
-            connector.upload()            
+            connector.upload()  
+        return True
            
-        self.purge()
     def get_option(self, name, default=None):
         """
             Look for option in  global_options
@@ -273,12 +267,27 @@ class Dataset():
         """
             Remove all saves for this dataset
         """
-        for save in self.get_all_saves():
-            self.remove(save, purge=True)
-    def remove(self, dataset_save_id, purge=False):
+        self.log("purging dataset...")
+        shutil.rmtree(self.save_directory)
+        ftp_backup = self.get_option('ftp_backup', []).split(',')
+        for host in ftp_backup:
+            host_options = self.savior.hosts[host]
+            kwargs = {
+                "dataset_name": self.name,
+                "local_saves_directory":self.savior.save_path, 
+                }
+            connector = mapping.MAPPING['ftpupload'](
+                    host_options=host_options,
+                    **kwargs 
+                    )
+            
+            connector.purge() 
+        self.log("dataset have been purged")
+    def remove(self, dataset_save_id):
         """
             remove a given save from saves folder and from hosts
         """
+        self.log("removing save [{0}]...".format(dataset_save_id))
         shutil.rmtree(self.save_directory+'/'+dataset_save_id)
         ftp_backup = self.get_option('ftp_backup', []).split(',')
         for host in ftp_backup:
@@ -292,16 +301,18 @@ class Dataset():
                     host_options=host_options,
                     **kwargs 
                     )
-            connector.remove()
-            if purge:
-                connector.purge()
-            
+            connector.remove()            
+        self.log("save [{0}] has been removed...".format(dataset_save_id))
+        
     def get_all_saves(self):
         """
             return a list of all saves for current dataset
         """
         saves = os.walk(self.save_directory).next()[1]
         return saves
+        
+
+    
 class ParseConfigError(Exception):
     def __init__(self, name, e):
         self.message = """{0} : Error while parsing config file. Error : {1}""".format(name, e)
