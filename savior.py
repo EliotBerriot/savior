@@ -1,9 +1,11 @@
 import sys
 import argparse
 import logging
-from main import Savior, ParseConfigError
+from src.main import Savior
 
- 
+import sys
+sys.path.append(".")
+
 logger = logging.getLogger('savior')
 logger.setLevel(logging.DEBUG)
 def parse_command_line(argv):
