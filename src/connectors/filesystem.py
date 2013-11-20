@@ -34,6 +34,7 @@ class FileSystemConnector(BaseConnector):
                     exclude_param, 
                     self.path_to_save
                     )
+                self.log("running {0}".format(command)
                 l = local(command)
                 if l.return_code == 2:
                     raise SaveError("Can't run the following command : {0}. Check path name ({1}) and options.".format(command, self.path_to_save))
