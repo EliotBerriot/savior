@@ -1,6 +1,6 @@
 # Presentation
 
-Savior is a tool built to automate these tasks :
+[Savior](https://github.com/EliotBerriot/savior) is a tool built to automate these tasks :
 - Create an archive of some files, using tar
 - Create sql dumps of databases
 - Send data via FTP to create a backup on a remote server
@@ -17,11 +17,13 @@ If you already have it installed, you can jump to next step.
 Installation process is described [here](http://www.pip-installer.org/en/latest/installing.html)
 
 On Debian-like distributions, you generally can do :
+    
     sudo apt-get install python-pip
 
 ## Install dependencies
 
 Savior has a few [dependencies](requirements.txt). Install them by running:    
+    
     sudo pip install -r requirements.txt
     
 You're done ! You can now configure your savior instance and get it to work.
@@ -31,6 +33,7 @@ You're done ! You can now configure your savior instance and get it to work.
 ## settings.ini
 
 Copy the provided [settings file](sample-settings.ini) and edit it with your very own informations:
+    
     cp sample-settings.ini settings.ini
     nano settings.ini
 
@@ -40,12 +43,14 @@ All options are described in the file, read carefully ;)
 
 Host file is used to log to FTP and database servers.
 Copy the provided [hosts file](sample-hosts.ini) and edit it with your very own informations:
+    
     cp sample-hosts.ini hosts.ini
     nano hosts.ini
     
 All options are described in the file, read carefully ;)
 
 As this file will contain sensitive informations, remember to secure it:
+    
     chmod 750 hosts.ini
     
     
@@ -53,6 +58,7 @@ As this file will contain sensitive informations, remember to secure it:
 
 Savior use files under `datasets` directory to describe what need to be saved and how.
 You can create your first dataset  with:
+    
     cp datasets/examples/example datasets/my_first_dataset
     nano datasets/my_first_dataset
   
@@ -66,11 +72,13 @@ Once you're done with configuration, you can run the savior via command line.
 It's useful when you want to know if your configuration works as expected.
 
 To get some help on available commands, just run:
+    
     python savior.py --help
 
 ## Save
 
 The save command is
+    
     python savior.py save
     
 It will:
@@ -96,6 +104,7 @@ You can add options to this command:
 ## Purge
 
 If, for some reason, you want to delete a bunch of saves, purge is the answer to your problem:
+    
     # purge all datasets
     python savior.py purge
     
@@ -121,6 +130,7 @@ Usage:
 
 The point of savior is to automate things. Command line is nice, but in most case, you'll want to use a crontab to save your datasets.
 When you have checked via command line that your configuration works, you can add the following to your crontab:
+    
     crontab -e 
     
     # add the following lines to save your datasets everyday, on midnight :
