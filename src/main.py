@@ -172,7 +172,7 @@ class Savior(LoggerAware, ConfigAware):
                 mail_content+= "- {0}\n".format(ds.name)
                 
             mail_content+= "{0} datasets did not need save :\n".format(len(self.dont_need_save_datasets))
-            for ds in self.self.dont_need_save_datasets:
+            for ds in self.dont_need_save_datasets:
                 mail_content+= "- {0}\n".format(ds.name)
             
         elif len(self.saved_datasets)>0 and len(self.not_saved_datasets)>0:
