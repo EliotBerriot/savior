@@ -1,0 +1,17 @@
+[global] 
+
+time_to_live=10
+days_between_saves=1
+ftp_backup=ftp_server1
+
+[application]
+
+type=filesystem
+path=/path/to/your/awesome/application 
+exclude=useless_folder,useful_folder/useless_file.txt 
+
+[production_database]
+
+type=mysql    
+host=database_server    
+database=my_database
