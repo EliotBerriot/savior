@@ -25,7 +25,8 @@ class FileSystemConnector(BaseConnector):
         super(FileSystemConnector, self).save()
         exclude_param= " "        
         for x in self.exclude:
-            exclude_param+='--exclude="{0}" '.format(x)
+            if len(x)>0:
+                exclude_param+='--exclude="{0}" '.format(x)
             
         with hide('everything'):
             with settings(warn_only=True):
