@@ -1,0 +1,5 @@
+- python 2.6 or higher (untested on python 3)
+- [pip](http://www.pip-installer.org/en/latest/) | Installation process is described [here](http://www.pip-installer.org/en/latest/installing.html)
+- mysql-client if you need to backup mysql databases
+- [tar](http://www.gnu.org/software/tar/) if you need to save files and directories
+- Python packages listed under [python_requirements.txt](python_requirements.txt)
