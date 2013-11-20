@@ -1,1 +1,52 @@
- 
+# this is a sample dataset filesystem
+# move it to /pathtoyoursaviorinsance/datasets to enable it
+
+[global] 
+# in this sections, you can override values from settings.ini
+# if you don't provide any values, settings.ini values will be used
+# in any case : ALWAYS LEAVE [global] LINE IN THIS FILE
+
+time_to_live=10
+days_between_saves=1
+ftp_backup=ftp_server1
+
+# every sections (except [global]) can be used to describe data (directory, database...)
+# Available type are :
+    - filesystem    # designate data on local filesystem (a file or a directory)
+                    # it will be tared
+    - mysql         # a database
+# Anatomy of a standard data section:
+# [unique_name]
+# type=one of the type mentioned before
+
+# In addition, some types of data accept additionnal attributes,
+# as described in following sections
+
+# sample local filesystem data section
+[application]
+
+type=filesystem
+
+# the local path to save
+path=/path/to/your/awesome/application 
+
+# a list of folders/files to excude from save,  
+# you can use wildcards, as described here: http://www.gnu.org/software/tar/manual/html_node/exclude.html
+# examples :
+    - exclude=*.pyc,*.swp       # will exclude all files with extension .pyc and .swp
+    - exclude=src/*.pyc         # will exclude all files with extension .pyc under src directory
+# coma-separated
+
+exclude=useless_folder,useful_folder/useless_file.txt 
+
+
+# sample database data section
+[production_database]
+
+type=mysql
+
+# a host existing in hosts.ini file
+host=database_server
+
+# the name of the database to save
+database=my_database

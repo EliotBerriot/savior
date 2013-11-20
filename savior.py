@@ -17,10 +17,15 @@ def parse_command_line(argv):
     """,
     choices=['save', 'clean', 'purge']
     )
+    parser.add_argument('-nm', '--no-mail',action='store_false', help="Won't send any mail")
+    
     parser.add_argument('-ds', '--datasets', nargs='+', type=str, help="A list of datasets concerned by the command", required=False)
     parser.add_argument("-f","--force-save",action='store_true', help="Force save (does not check for delay between saves)")
     args = parser.parse_args()
     
+    send_mail = True
+    if args.no_mail != None:
+        send_mail = args.no_mail
     datasets = None
     if args.datasets:
         datasets = args.datasets
@@ -28,7 +33,8 @@ def parse_command_line(argv):
         datasets = 'all'
     s = Savior(
         datasets_to_save = datasets,
-        force_save = args.force_save
+        force_save = args.force_save,
+        send_mail = send_mail
     )
     
     if args.action =="save":
