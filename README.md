@@ -1,6 +1,6 @@
 # Presentation
 
-Autosave is a tool built to automate these tasks :
+Savior is a tool built to automate these tasks :
 - Create an archive of some files, using tar
 - Create sql dumps of databases
 - Send data via FTP to create a backup on a remote server
@@ -62,7 +62,9 @@ You can create as many datasets as you want, as long as you store them in `datas
 
 # Usage
 
-Once you're done with configuration, you can run the savior via command line.
+Once you're done with configuration, you can run the savior via command line. 
+It's useful when you want to know if your configuration works as expected.
+
 To get some help on available commands, just run:
     python savior.py --help
 
@@ -86,29 +88,46 @@ You can add options to this command:
     
     # Save my_dataset and my_other_dataset
     python savior.py save --datasets my_dataset my_other_dataset
-
     
+    # Save my_dataset without sending mail
+    python savior.py save --datasets my_dataset -nm 
+    
+ 
+## Purge
 
-Once you're done, you can use autosave as follows:
-cd path/to/autosave/folder
-sudo fab autosave
+If, for some reason, you want to delete a bunch of saves, purge is the answer to your problem:
+    # purge all datasets
+    python savior.py purge
+    
+    # purge my_dataset
+    python savior.py purge --datasets my_dataset
+    
+Use carefully !
 
-This command will iterate through all your datasets and save them to a new directory (using current datestamp as name). 
-Then, it will put this whole directory on your FTP server, and send you an email once it's done.
+## Clean
 
-You can also save a specific dataset :
-sudo fab save:another_dataset
+Clean will delete old saves from both local and remote server.
+By default, clean is called after a successfull `save` command, so you should not need it.
 
-It will only save another_dataset.
+Usage:
+    
+    # clean all datasets
+    python savior.py clean
 
-Autosave has an autosave.sh script you can use in your crontab : 
-sudo crontab -e
-And add the following lines to save your datasets everyday, on midnight :
+    # clean my_dataset
+    python savior.py clean --datasets my_dataset
+    
+# Automating save process
 
-# autosave
-* 0 * * * /path/to/autosave/autosave.sh 
+The point of savior is to automate things. Command line is nice, but in most case, you'll want to use a crontab to save your datasets.
+When you have checked via command line that your configuration works, you can add the following to your crontab:
+    crontab -e 
+    
+    # add the following lines to save your datasets everyday, on midnight :
+    # Savior
+    * 0 * * * python /path/to/savior/savior.py save
 
-Contact and bug report
-===========================
-You can contact me for any question at contact@eliotberriot.com
+# Contact and bug report
+
+Feel free to send me any question or suggestion relative to savior via [Git repository](https://github.com/EliotBerriot/savior).
 
