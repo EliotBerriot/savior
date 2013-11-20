@@ -1,6 +1,7 @@
 # Presentation
 
 [Savior](https://github.com/EliotBerriot/savior) is a tool built to automate these tasks :
+    
 - Create an archive of some files, using tar
 - Create sql dumps of databases
 - Send data via FTP to create a backup on a remote server
@@ -11,18 +12,20 @@ As I did not found a simple tool to achieve these tasks the way I want, I create
 # Philosophy
 
 Savior works as follow:
-    1. You define your settings : save recurrency, number of save to keep, etc.
-    2. You define your hosts:
-        - FTP servers on which you want to backup your files
-        - Database server you want to save
-    3. You define some datasets. A dataset is a collection of files and/or databases you want to save together
     
+1. You define your settings : save recurrency, number of save to keep, etc.
+2. You define your hosts:
+    - FTP servers on which you want to backup your files
+    - Database server you want to save
+3. You define some datasets. A dataset is a collection of files and/or databases you want to save together
+
 Savior is designed to be as flexible as possible. This mean you can override most global settings in datasets configuration.
 
 This allow you to have two datasets with different save settings, for exemple:
-    - "important_website" dataset, collecting production MySQL database and website PHP files, that saves every day, keeping 10 last saves on 3 different FTP servers
-    - "apache_configuration" dataset that saves your apache config every week, keeping 2 saves on 2 different FTP servers
     
+- "important_website" dataset, collecting production MySQL database and website PHP files, that saves every day, keeping 10 last saves on 3 different FTP servers
+- "apache_configuration" dataset that saves your apache config every week, keeping 2 saves on 2 different FTP servers
+
 You can save as many datasets as you want, the only limit is available space on your hard drives.
 On FTP servers, datasets will be stored  like this :
     
@@ -41,6 +44,7 @@ On FTP servers, datasets will be stored  like this :
             `-- files.tar
         `-- 2013-11-20--17h54
             `-- files.tar
+            
 # Installation 
 
 ## Get savior
