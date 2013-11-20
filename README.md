@@ -8,7 +8,19 @@
 
 # Installation 
 
-## Get the archive
+## Get savior
+
+### via Git
+
+    git clone https://github.com/EliotBerriot/savior.git
+    
+### via wget
+
+    wget https://github.com/EliotBerriot/savior/archive/master.zip
+    unzip master.zip
+    mv savior-master savior
+    rm master.zip
+    
 
 ## Install pip
 If you already have it installed, you can jump to next step. 
@@ -22,6 +34,10 @@ On Debian-like distributions, you generally can do :
 
 ## Install dependencies
 
+First of all, move to savior directory:
+    
+    cd savior
+    
 Savior has a few [dependencies](requirements.txt). Install them by running:    
     
     sudo pip install -r requirements.txt
@@ -29,7 +45,7 @@ Savior has a few [dependencies](requirements.txt). Install them by running:
 You're done ! You can now configure your savior instance and get it to work.
 
 # Configuration
-
+    
 ## settings.ini
 
 Copy the provided [settings file](sample-settings.ini) and edit it with your very own informations:
