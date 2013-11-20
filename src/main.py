@@ -63,7 +63,7 @@ class Savior(LoggerAware, ConfigAware):
         
         self.saved_datasets = []
         self.not_saved_datasets = []
-        self.last_save_too_recent_datasets = []
+        self.dont_need_save_datasets = []
         
         # create datasets
         self.datasets_path = self.root_path+"/datasets" 
@@ -97,17 +97,20 @@ class Savior(LoggerAware, ConfigAware):
         self.saved_datasets = []
         exception=False
         for ds in self.datasets:
-            if  not exception and (self.force_save or ds.need_save()):
-                try:
-                    saved = ds.save()
-                    self.saved_datasets.append(ds)
-                        
-                except Exception, e:
-                    exception = True
-                    self.not_saved_datasets.append(ds)
-                    self.log("Save process has met a critical error")
-                    self.log("Skipping save for all remaining datasets")
-                    ds.remove()
+            if not exception :
+                if (self.force_save or ds.need_save()):
+                    try:
+                        saved = ds.save()
+                        self.saved_datasets.append(ds)
+                            
+                    except Exception, e:
+                        exception = True
+                        self.not_saved_datasets.append(ds)
+                        self.log("Save process has met a critical error")
+                        self.log("Skipping save for all remaining datasets")
+                        ds.remove()
+                else:
+                    self.dont_need_save_datasets.append(ds)
             else:
                 self.not_saved_datasets.append(ds)
         self.log("Save process ended : {0} datasets have been saved".format(len(self.saved_datasets)))
