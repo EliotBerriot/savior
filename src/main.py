@@ -164,11 +164,15 @@ class Savior(LoggerAware, ConfigAware):
         mail_content=""
         mail_subject=""        
         
-        if len(self.saved_datasets)==len(self.datasets) and len(self.not_saved_datasets)==0:
+        if len(self.saved_datasets)+ len(self.dont_need_save_datasets)==len(self.datasets) and len(self.not_saved_datasets)==0:
             mail_subject = "Savior : {0} successfully ended".format(formated_stamp)
             mail_content+= "Savior script has run correctly on {0}.\n".format(formated_stamp)
             mail_content+= "{0} datasets were saved :\n".format(len(self.saved_datasets))
             for ds in self.saved_datasets:
+                mail_content+= "- {0}\n".format(ds.name)
+                
+            mail_content+= "{0} datasets did not need save :\n".format(len(self.dont_need_save_datasets))
+            for ds in self.self.dont_need_save_datasets:
                 mail_content+= "- {0}\n".format(ds.name)
             
         elif len(self.saved_datasets)>0 and len(self.not_saved_datasets)>0:
