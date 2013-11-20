@@ -59,3 +59,12 @@ class LoggerAware(object):
         if not self.logger_message_prefix_set:
             self.logger_message_prefix = prefix 
             self.logger_message_prefix_set = True
+            
+class ConfigAware(object):
+    def convert_to_boolean(self, value):
+        if value in ['true', "yes", "1", "on", True]:
+            return True
+        elif value in ['false', "no", "0", "off", False]:
+            return False
+        else:
+            raise Exception("Can't convert value {0} to boolean".format(value))

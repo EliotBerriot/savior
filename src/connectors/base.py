@@ -1,9 +1,9 @@
 
 import logging
 
-from ..utils import LoggerAware
+from ..utils import LoggerAware, ConfigAware
 from ..errors import SaviorError
-class BaseConnector(LoggerAware):
+class BaseConnector(LoggerAware, ConfigAware):
     """
         A connector is designed to save a particular type of     
         data (email, database, local filesystem...)
@@ -74,8 +74,9 @@ class BaseConnector(LoggerAware):
         """
             Check if the connector is working properly using given
             informations
-        """
+        """        
         self.prepare_connection()
+        self.log("checking...")
         return True
 
 class CredentialsConnector(BaseConnector):

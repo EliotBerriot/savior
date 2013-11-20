@@ -8,10 +8,10 @@ import shutil
 import smtplib
 from email.mime.text import MIMEText
 from connectors import mapping
-from utils import LoggerAware
+from utils import LoggerAware, ConfigAware
 from errors import ParseConfigError
 
-class Savior(LoggerAware):
+class Savior(LoggerAware, ConfigAware):
     """
         The main class of Savior project
     """
@@ -92,16 +92,25 @@ class Savior(LoggerAware):
         self.init_logger()
  
     def save(self):
-        self.log("saving {0} datasets...".format(len(self.datasets)))
+        self.log("Save id [{0}]".format(self.stamp_str))
+        self.log("Saving {0} datasets...".format(len(self.datasets)))
         self.saved_datasets = []
+        exception=False
         for ds in self.datasets:
-            if self.force_save or ds.need_save():
-                saved = ds.save()
-                if saved :
+            if  not exception and (self.force_save or ds.need_save()):
+                try:
+                    saved = ds.save()
                     self.saved_datasets.append(ds)
-                else: 
+                        
+                except Exception, e:
+                    exception = True
                     self.not_saved_datasets.append(ds)
-        self.log("save process ended : {0} datasets have been saved".format(len(self.saved_datasets)))
+                    self.log("Save process has met a critical error")
+                    self.log("Skipping save for all remaining datasets")
+                    ds.remove()
+            else:
+                self.not_saved_datasets.append(ds)
+        self.log("Save process ended : {0} datasets have been saved".format(len(self.saved_datasets)))
         if self.send_mail:            
             self.mail()
      
@@ -152,7 +161,7 @@ class Savior(LoggerAware):
         mail_content=""
         mail_subject=""        
         
-        if len(self.saved_datasets)>0 and len(self.not_saved_datasets)==0:
+        if len(self.saved_datasets)==len(self.datasets) and len(self.not_saved_datasets)==0:
             mail_subject = "Savior : {0} successfully ended".format(formated_stamp)
             mail_content+= "Savior script has run correctly on {0}.\n".format(formated_stamp)
             mail_content+= "{0} datasets were saved :\n".format(len(self.saved_datasets))
@@ -172,9 +181,9 @@ class Savior(LoggerAware):
                 mail_content+= "  - {0}\n".format(ds.name)
             
         else:
-            mail_subject = "Autosave : {0} script has failed".format(formated_stamp)
-            mail_content+= "Autosave script has run on {0}.\n".format(formated_stamp)
-            mail_content+= "Autosave : {0} script has failed, no datasets have been saved.\n".format(formated_stamp)            
+            mail_subject = "Savior : {0} script has failed".format(formated_stamp)
+            mail_content+= "Savior script has run on {0}.\n".format(formated_stamp)
+            mail_content+= "Savior : {0} script has failed, no datasets have been saved.\n".format(formated_stamp)            
         #log part
         mail_content+= "For more informations, please read the following log :\n\n"
         os.chdir(self.root_path)
@@ -229,7 +238,7 @@ class Savior(LoggerAware):
             self.log("Error during mail sending process via SMTP server [{0}] : {1}".format(smtp['hostname'], e), "error")
                 
         
-class Dataset(LoggerAware):
+class Dataset(LoggerAware, ConfigAware):
     def __init__(self,savior, path, config_file):
         self.savior = savior
         self.savior_options = dict(self.savior.settings.items('global'))
@@ -275,7 +284,7 @@ class Dataset(LoggerAware):
         recent_saves = self.get_saves_by_date(days_between_saves)
             
         if len(recent_saves) == 0:
-            self.log('no save have been found in the last {0} day(s), we need to create a new one'.format(days_between_saves))
+            self.log('no save has been found in the last {0} day(s), we need to create a new one'.format(days_between_saves))
             self.remove_old_saves()
             return True
         else:
@@ -362,10 +371,25 @@ class Dataset(LoggerAware):
                     host_options=host_options,
                     **kwargs 
                     )
-            connector.upload() 
+            connector.upload()
+        keep_local_saves = self.convert_to_boolean(self.get_option('keep_local_saves'))
+        if not keep_local_saves:
+            self.remove_local_save()
         self.remove_old_saves()
         return True
-           
+    
+    def remove_local_save(self):
+        """
+            Clean current save local directory (but leave the directory itself)
+        """
+        self.log("Cleaning local save folder...")
+        for the_file in os.listdir(self.current_save_directory):
+            file_path = os.path.join(self.current_save_directory, the_file)
+            try:
+                os.unlink(file_path)
+            except Exception, e:
+                print e
+                
     def get_option(self, name, default=None):
         """
             Look for option in  global_options
@@ -392,10 +416,10 @@ class Dataset(LoggerAware):
             )
         )
         existing_saves = self.get_all_saves()
-        self.log('checking save number...')
+        self.log('remove old saves...')
         ok_for_delete = 0 # amount of saves that can be safely delete
         if len(existing_saves) <= min_saves_number:
-            self.log('number of existing saves ({0}) is inferior or equal to minimum saves number ({1})'.format(min_saves_number, len(existing_saves)))
+            self.log('number of existing saves ({0}) is inferior or equal to minimum saves number ({1})'.format(len(existing_saves),min_saves_number))
             ok_for_delete = 0          
         else:
             self.log("there are more saves than the minimum amount required (min: {0}, found: {1})".format(min_saves_number, len(existing_saves)))
@@ -441,11 +465,13 @@ class Dataset(LoggerAware):
                     )
             
             connector.purge() 
-        self.log("dataset have been purged")
-    def remove(self, dataset_save_id):
+        self.log("dataset has been purged")
+    def remove(self, dataset_save_id=None):
         """
             remove a given save from saves folder and from hosts
         """
+        if not dataset_save_id: # if not specified, remove current save
+            dataset_save_id = self.savior.stamp_str
         self.log("removing save [{0}]...".format(dataset_save_id))
         shutil.rmtree(self.save_directory+'/'+dataset_save_id)
         ftp_backup = self.get_option('ftp_backup', []).split(',')

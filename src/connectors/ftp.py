@@ -21,13 +21,7 @@ class FTPUploadConnector(RemoteConnector):
             return self.ftp_port
     def set_remote_saves_directory(self, remote_saves_directory):
         self.remote_saves_directory = remote_saves_directory
-    def convert_to_boolean(self, value):
-        if value in ['true', "yes", "1", "on", True]:
-            return True
-        elif value in ['false', "no", "0", "off", False]:
-            return False
-        else:
-            raise Exception("Can't convert value {0} to boolean".format(value))
+        
     def set_local_saves_directory(self, local_saves_directory):
         self.local_saves_directory = local_saves_directory
     
@@ -246,10 +240,15 @@ class FTPUploadConnector(RemoteConnector):
             Remove a save from FTP host
         """
         self.prepare_save()
-        self.get_connection()        
-        self.chdir(self.dataset_name)
-        self.delete_directory(self.dataset_save_id)
+        self.get_connection()
+        try:
+            self.chdir(self.dataset_name)
+        except Exception, e:
+            self.log(
+                "{0} : path does not exist or permission denied".format(self.getcwd()+"/"+self.dataset_name)
+                )
+        else:
+            self.delete_directory(self.dataset_save_id)
         
 class FTPUploadError(SaveError):
     pass
-    
