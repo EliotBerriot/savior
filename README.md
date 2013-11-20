@@ -151,7 +151,7 @@ When you have checked via command line that your configuration works, you can ad
     
     # add the following lines to save your datasets everyday, on midnight :
     # Savior
-    * 0 * * * python /path/to/savior/savior.py save
+    * 0 * * * python /path/to/savior/savior.py save /dev/null 2>&1
 
 # Contact and bug report
 

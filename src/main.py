@@ -153,7 +153,7 @@ class Savior(LoggerAware, ConfigAware):
             # get connector instance from type setting
             connector = mapping.MAPPING[options["type"]](host_options=options)
             connector.check_connection()
-            
+           
     def mail(self):
         """
             Send a mail to all admins
@@ -243,8 +243,8 @@ class Savior(LoggerAware, ConfigAware):
             return True
         except Exception, e:    
             self.log("Error during mail sending process via SMTP server [{0}] : {1}".format(smtp['hostname'], e), "error")
-                
-        
+             
+    
 class Dataset(LoggerAware, ConfigAware):
     def __init__(self,savior, path, config_file):
         self.savior = savior

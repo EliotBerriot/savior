@@ -1,6 +1,6 @@
 
 import logging
-
+import subprocess
 from ..utils import LoggerAware, ConfigAware
 from ..errors import SaviorError
 class BaseConnector(LoggerAware, ConfigAware):
@@ -79,6 +79,13 @@ class BaseConnector(LoggerAware, ConfigAware):
         self.log("checking...")
         return True
 
+    def run(self, command):
+        """
+            run subprocess.call
+        """
+        devnull = open('/dev/null', 'w') # hide output        
+        process = subprocess.call(command, shell=True, stdout=devnull, stderr=devnull)
+        return process
 class CredentialsConnector(BaseConnector):
     """
         A connector dedicated to save process that needs credentials
@@ -99,6 +106,7 @@ class RemoteConnector(CredentialsConnector):
         host
     """
     host = {}
+    default_port = 0
     def set_host(self):
         self.host['hostname'] = self.get_host_option('hostname')       
         self.host['port'] = int(self.get_host_option('port', self.get_default_port()))
@@ -108,7 +116,7 @@ class RemoteConnector(CredentialsConnector):
         self.set_host()
         
     def get_default_port(self):
-        return 0
+        return self.default_port
 class DatabaseConnector(RemoteConnector):
     """
         A connector dedicated to save process that involve a database
