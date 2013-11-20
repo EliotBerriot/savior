@@ -28,18 +28,19 @@ class FileSystemConnector(BaseConnector):
             exclude_param+='--exclude="{0}" '.format(x)
             
         with hide('everything'):
-            l = local('tar -cf "{0}.tar" {1} "{2}"'.format(
-                self.get_save_path(),
-                exclude_param, 
-                self.path_to_save
-                )
-            )
-            if l.return_code == 2:
-                raise SaveError(l)
-                return False
-            else:
-                self.log("[{0}] files have been tared".format(
-                    self.name,
+            with settings(warn_only=True):
+                command = 'tar -cf "{0}.tar" {1} "{2}"'.format(
+                    self.get_save_path(),
+                    exclude_param, 
+                    self.path_to_save
                     )
-                )
-                return True
+                l = local(command)
+                if l.return_code == 2:
+                    raise SaveError("Can't run the following command : {0}. Check path name ({1}) and options.".format(command, self.path_to_save))
+                    return False
+                else:
+                    self.log("[{0}] files have been tared".format(
+                        self.name,
+                        )
+                    )
+                    return True
