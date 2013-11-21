@@ -10,12 +10,13 @@ logger = logging.getLogger('savior')
 logger.setLevel(logging.DEBUG)
 def parse_command_line(argv):
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", help="""What should savior do ? (save|clean|purge)\n
+    parser.add_argument("action", help="""What should savior do ?\n
     save: save given datasets\n
     clean: remove old saves from given datasets\n
     purge: remove all saves from given dataset
+    check: check your configuration files for syntax errors, and try to connect to every host in hosts.ini\n
     """,
-    choices=['save', 'clean', 'purge']
+    choices=['save', 'clean', 'purge', 'check']
     )
     parser.add_argument('-nm', '--no-mail',action='store_false', help="Won't send any mail")
     
@@ -43,6 +44,8 @@ def parse_command_line(argv):
         s.clean()
     if args.action =="purge":
         s.purge()
+    if args.action =="check":
+        s.check_config()
 def main():
     try:
         parse_command_line(sys.argv)

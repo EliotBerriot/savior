@@ -27,7 +27,7 @@ class FileSystemConnector(BaseConnector):
             if len(x)>0:
                 exclude_param+='--exclude="{0}" '.format(x)            
     
-            command = 'tar -cf "{0}.tar" {1} "{2}"'.format(
+            command = 'tar -czf "{0}.tar.gz" {1} "{2}"'.format(
                 self.get_save_path(),
                 exclude_param, 
                 self.path_to_save
