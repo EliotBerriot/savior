@@ -6,7 +6,7 @@ import shutil
 import smtplib
 from email.mime.text import MIMEText
 from connectors import mapping
-from utils import LoggerAware, ConfigAware
+from utils import LoggerAware, ConfigAware, folder_size
 from errors import ParseConfigError
 
 class Dataset(LoggerAware, ConfigAware):
@@ -58,7 +58,6 @@ class Dataset(LoggerAware, ConfigAware):
             
         if len(recent_saves) == 0:
             self.log('no save has been found in the last {0} day(s), we need to create a new one'.format(days_between_saves))
-            self.remove_old_saves()
             return True
         else:
             self.log('{0} saves are present for the last {1} day(s)'.format(len(recent_saves), days_between_saves))
@@ -94,7 +93,9 @@ class Dataset(LoggerAware, ConfigAware):
                 connector.save()
                 self.log("[{0}] successfully saved".format(save))
         if self.post_save():
-            self.log("save process successfully ended")
+            self.log("save  {0})".format(self.current_save_directory))
+            
+            self.log("save process successfully ended (total size: {0})".format(folder_size(self.current_save_directory)))
             return True
         else:
             return False           

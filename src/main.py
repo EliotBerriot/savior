@@ -1,6 +1,6 @@
  # -*- coding: utf-8 -*-
 
-import os, sys
+import os, sys, traceback
 import ConfigParser
 from datetime import datetime, timedelta
 import shutil
@@ -89,10 +89,11 @@ class Savior(LoggerAware, ConfigAware):
                         saved = ds.save()
                         self.saved_datasets.append(ds)
                             
-                    except Exception, e:
+                    except Exception, e:                        
+                        self.log(traceback.format_exc())
                         exception = True
                         self.not_saved_datasets.append(ds)
-                        self.log("Save process has met a critical error")
+                        self.log("Save process has met a critical error: {0}".format(e), "critical")
                         self.log("Skipping save for all remaining datasets")
                         ds.remove()
                 else:

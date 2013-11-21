@@ -1,6 +1,6 @@
 
 import logging
-import sys
+import sys, os
 class LoggerAware(object):
     """
         This class provide facilities to log messages
@@ -68,3 +68,41 @@ class ConfigAware(object):
             return False
         else:
             raise Exception("Can't convert value {0} to boolean".format(value))
+        
+def human_size(bytes):
+    """
+        Return a bit syze in human readable format
+        from http://bjdierkes.com/python-converting-bytes-to-a-human-readable-format/
+    """
+    SYMBOLS = ('Kb', 'Mb', 'Gb', 'Tb', 'Pb', 'Eb', 'Zb', 'Yb')
+    PREFIX = {}
+    
+    for i, s in enumerate(SYMBOLS):
+        PREFIX[s] = 1 << (i+1)*10
+    
+    for s in reversed(SYMBOLS):
+        if bytes >= PREFIX[s]:
+            value = float(bytes) / PREFIX[s]
+            return '%.1f%s' % (value, s)
+    
+    # bytes is less than 1024B
+    return '%.1fB' % bytes
+    
+ 
+def folder_size(path, human=True):
+    """
+    from http://snipplr.com/view/47686/
+    """
+    total_size = os.path.getsize(path)
+    for item in os.listdir(path):
+        itempath = os.path.join(path, item)
+        if os.path.isfile(itempath):
+            total_size += os.path.getsize(itempath)
+        elif os.path.isdir(itempath):
+            total_size += folder_size(itempath, human=False)
+    
+    if human:
+        ret = human_size(total_size)
+    else:
+        ret = total_size
+    return ret
