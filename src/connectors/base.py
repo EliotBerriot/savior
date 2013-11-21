@@ -1,3 +1,19 @@
+# Copyright (C) 2013 Eliot Berriot <contact@eliotberriot.com>
+#
+# This file is part of savior.
+#
+# Savior is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Savior is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Savior.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 import subprocess
@@ -46,7 +62,7 @@ class BaseConnector(LoggerAware, ConfigAware):
         """
         if self.data_options.get(name, None):
             return self.data_options[name]
-        elif self.host_options.get(name, None):   
+        elif self.host_options.get(name, None):  
             return self.host_options[name]
         else:
             return default
@@ -95,7 +111,6 @@ class CredentialsConnector(BaseConnector):
     def set_credentials(self):
         self.credentials['username'] = self.get_host_option('username')
         self.credentials['password'] = self.get_host_option('password')
-
     def prepare_connection(self):
         super(CredentialsConnector, self).prepare_connection()
         self.set_credentials()
