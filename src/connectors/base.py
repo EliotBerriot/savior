@@ -84,7 +84,7 @@ class BaseConnector(LoggerAware, ConfigAware):
             run subprocess.call
         """
         devnull = open('/dev/null', 'w') # hide output        
-        process = subprocess.call(command, shell=True, stdout=devnull, stderr=devnull)
+        process = subprocess.call(command, shell=True)#, stdout=devnull, stderr=devnull)
         return process
 class CredentialsConnector(BaseConnector):
     """
@@ -117,6 +117,7 @@ class RemoteConnector(CredentialsConnector):
         
     def get_default_port(self):
         return self.default_port
+        
 class DatabaseConnector(RemoteConnector):
     """
         A connector dedicated to save process that involve a database

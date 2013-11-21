@@ -18,7 +18,7 @@ class FileSystemConnector(BaseConnector):
         self.exclude = self.data_options.get('exclude', "").split(",")
         
     def get_save_path(self):
-        return self.save_path+"/"+self.name
+        return self.save_path+"/"+self.name+".tar.gz"
         
     def save(self):
         super(FileSystemConnector, self).save()
@@ -27,7 +27,7 @@ class FileSystemConnector(BaseConnector):
             if len(x)>0:
                 exclude_param+='--exclude="{0}" '.format(x)            
     
-            command = 'tar -czf "{0}.tar.gz" {1} "{2}"'.format(
+            command = 'tar -pczf "{0}" {1} "{2}"'.format(
                 self.get_save_path(),
                 exclude_param, 
                 self.path_to_save

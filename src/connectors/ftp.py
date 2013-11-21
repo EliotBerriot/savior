@@ -3,7 +3,7 @@ from fabric.api import local, hide, settings
 import paramiko
 import ftplib
 import sys, os
-
+from ..utils import folder_size
 class FTPUploadConnector(RemoteConnector):
     """
         A connector designed to backup files to FTP server
@@ -86,7 +86,9 @@ class FTPUploadConnector(RemoteConnector):
         os.chdir(self.dataset_name)
         # check if current save directory already exists on remote host
         os.chdir(self.dataset_save_id)
-        self.log("uploading files...")
+        
+        self.log("uploading files (total size: {0})...".format(folder_size(os.getcwd())))
+        
         self.upload_directory(os.getcwd())
         self.close_connection()
         
