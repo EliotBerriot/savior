@@ -1,13 +1,33 @@
 # Presentation
 
-[Savior](https://github.com/EliotBerriot/savior) is a tool built to automate these tasks :
-    
-- Create an archive of some files, using tar
-- Create sql dumps of databases
-- Send data via (S)FTP to create a backup on a remote server
-- Send a mail when the backup process is done
+[Savior](https://github.com/EliotBerriot/savior) is a python program that create snapshots of your data.
+By data, I mean regular files, but also databases (MySQL or PostgreSQL).
 
-As I did not found a simple tool to achieve these tasks the way I want, I created it.
+Contrary to other tools, savior try to be light and simple both for set up and usage.
+It does SNAPSHOTS, a.k.a complete saves of data. Not incremental or differential.
+If you need these kind of saves, please consider using another tool.
+
+Savior is released under [GPLv3 licence](http://www.gnu.org/copyleft/gpl.html).
+
+# Features
+
+- Tar ang Gzip files and directories, with simple exclude rules
+- Backup MySQL and PostgreSQL databases (both locally or remotely)
+- Keep your different types of data (files, databases) together ("datasets") , so you can find and restore them easily
+- Transfer backups to one or many FTP server (via FTP or SFTP)
+- Automatic saves via crontab
+- Command line utility if you want to save manually
+- Global and per-dataset settings : regularity, number of snapshots to keep, credentials, backup servers...
+- Send mail to one or many contact with results of backup process
+
+# Warning
+
+Savior is a young (november 2013) and personnal project. 
+
+As it deals with data, and data is important, please, try it carefully before using it in critical operations.
+*Do some test backups first, and ensure your data is backed up properly, without loss or corruption of any kind.*
+
+Feel free to report any issue you may encounter.
 
 # Philosophy
 
@@ -27,14 +47,14 @@ This allow you to have two datasets with different save settings, for exemple:
 - "apache_configuration" dataset that saves your apache config every week, keeping 2 saves on 2 different FTP servers
 
 You can save as many datasets as you want, the only limit is available space on your hard drives.
-On FTP servers, datasets will be stored  like this :
+On FTP servers, datasets will be stored like this :
     
     /your/save/path
     |-- important_website
-    |   |-- 2013-11-19--17h54
+    |   |-- 2013-11-19--17h54 # a snapshot of important_website on 2013-11-19
     |   |   |-- application.tar
     |   |   |-- base_prod.sql
-    |   `-- 2013-11-20--17h54
+    |   `-- 2013-11-20--17h54 # a snapshot of important_website the day after
     |       |-- application.tar
     |       |-- base_prod.sql
     `-- apache_configuration

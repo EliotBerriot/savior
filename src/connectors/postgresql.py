@@ -17,21 +17,24 @@
 
 from base import DatabaseConnector, SaveError, ConnectionError
 
-class MySQLConnector(DatabaseConnector):
+
+class PostgreSQLConnector(DatabaseConnector):
     """
         A connector designed to save MySQL databases
     """    
      
-    default_port = 3306
+    default_port = 5432
     def prepare_connection(self):
-        super(MySQLConnector, self).prepare_connection()
-        self.set_logger_message_prefix('MySQL [{0}] - '.format(self.host['hostname']))
-        
+        super(PostgreSQLConnector, self).prepare_connection()
+        self.set_logger_message_prefix('PostgreSQL [{0}] - '.format(self.host['hostname']))
+       
+    def set_password(self, password):
+        self.run('export PGPASSWORD="{0}"'.format(password))
     def save(self):
-        super(MySQLConnector, self).save()
-        command = """mysqldump -u "{0}" --password='{1}' -h "{2}" --port {3} --databases "{4}" > "{5}/{6}.sql" """.format(
-                self.credentials["username"],
-                self.credentials["password"],  
+        super(PostgreSQLConnector, self).save()
+        self.set_password(self.credentials["password"])
+        command = """pg_dump -U "{0}" -h "{1}" -p {2} "{3}" > "{4}/{5}.sql" """.format(
+                self.credentials["username"],  
                 self.host['hostname'],
                 self.host['port'],
                 self.database,
@@ -50,13 +53,12 @@ class MySQLConnector(DatabaseConnector):
             )
                 
     def check_connection(self):
-        super(MySQLConnector, self).check_connection()                
-        command = """mysql -u "{0}" --password='{1}' -h "{2}" --port {3} -e "exit" """.format(
-                self.credentials["username"],
-                self.credentials["password"],  
+        super(PostgreSQLConnector, self).check_connection()    
+        self.set_password(self.credentials["password"])
+        command = """psql -U "{0}" -h "{1}" -p {2} -c \\\q""".format(
+                self.credentials["username"],  
                 self.host['hostname'],
                 self.host['port'],
-                self.database,
             )
             
         l = self.run(command)
