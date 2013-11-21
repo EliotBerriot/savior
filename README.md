@@ -4,7 +4,7 @@
     
 - Create an archive of some files, using tar
 - Create sql dumps of databases
-- Send data via FTP to create a backup on a remote server
+- Send data via (S)FTP to create a backup on a remote server
 - Send a mail when the backup process is done
 
 As I did not found a simple tool to achieve these tasks the way I want, I created it.
@@ -34,11 +34,9 @@ On FTP servers, datasets will be stored  like this :
     |   |-- 2013-11-19--17h54
     |   |   |-- application.tar
     |   |   |-- base_prod.sql
-    |   |   `-- base_test.sql
     |   `-- 2013-11-20--17h54
     |       |-- application.tar
     |       |-- base_prod.sql
-    |       `-- base_test.sql
     `-- apache_configuration
         `-- 2013-11-19--17h54
             `-- files.tar
@@ -202,7 +200,7 @@ When you have checked via command line that your configuration works, you can ad
     
     # add the following lines at the end to save your datasets everyday, on midnight :
     # Savior
-    * 0 * * * python /path/to/savior/savior.py save /dev/null 2>&1
+    * 0 * * * python /path/to/savior/savior.py save > /dev/null 2>&1
 
 Sometimes, you may meet permissions problems when backing up files from local system.
 In this case, one solution is to run the save process as root :
@@ -211,7 +209,7 @@ In this case, one solution is to run the save process as root :
     
     # add the following lines at the end to save your datasets everyday, on midnight :
     # Savior
-    * 0 * * * python /path/to/savior/savior.py save /dev/null 2>&1
+    * 0 * * * python /path/to/savior/savior.py save > /dev/null 2>&1
     
 
 # Contact, help and bug report
