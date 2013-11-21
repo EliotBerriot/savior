@@ -220,7 +220,7 @@ When you have checked via command line that your configuration works, you can ad
     
     # add the following lines at the end to save your datasets everyday, on midnight :
     # Savior
-    * 0 * * * python /path/to/savior/savior.py save > /dev/null 2>&1
+    0 0 * * * python /path/to/savior/savior.py save > /dev/null 2>&1
 
 Sometimes, you may meet permissions problems when backing up files from local system.
 In this case, one solution is to run the save process as root :
@@ -229,7 +229,7 @@ In this case, one solution is to run the save process as root :
     
     # add the following lines at the end to save your datasets everyday, on midnight :
     # Savior
-    * 0 * * * python /path/to/savior/savior.py save > /dev/null 2>&1
+    0 0 * * * python /path/to/savior/savior.py save > /dev/null 2>&1
     
 
 # Contact, help and bug report
