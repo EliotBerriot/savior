@@ -29,7 +29,7 @@ class MySQLConnector(DatabaseConnector):
         
     def save(self):
         super(MySQLConnector, self).save()
-        command = """mysqldump -u "{0}" --password='{1}' -h "{2}" --port {3} --databases "{4}" > "{5}/{6}.sql" """.format(
+        command = """mysqldump -u "{0}" --password='{1}' -h {2} --port {3} --databases "{4}" > "{5}/{6}.sql" """.format(
                 self.credentials["username"],
                 self.credentials["password"],  
                 self.host['hostname'],
@@ -51,7 +51,7 @@ class MySQLConnector(DatabaseConnector):
                 
     def check_connection(self):
         super(MySQLConnector, self).check_connection()                
-        command = """mysql -u "{0}" --password='{1}' -h "{2}" --port {3} -e "exit" """.format(
+        command = """mysql -u "{0}" --password='{1}' -h {2} --port {3} -e "exit" """.format(
                 self.credentials["username"],
                 self.credentials["password"],  
                 self.host['hostname'],
