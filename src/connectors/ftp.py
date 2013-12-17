@@ -16,7 +16,6 @@
 # along with Savior.  If not, see <http://www.gnu.org/licenses/>.
 
 from base import RemoteConnector, SaveError, ConnectionError
-from fabric.api import local, hide, settings
 import paramiko
 import ftplib
 import sys, os
