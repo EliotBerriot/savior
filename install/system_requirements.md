@@ -1,4 +1,6 @@
 - python 2.6 or higher (untested on python 3)
+- python-dev
+- python-crypto
 - [pip](http://www.pip-installer.org/en/latest/) | Installation process is described [here](http://www.pip-installer.org/en/latest/installing.html)
 - mysql-client if you need to backup mysql databases
 - postgresql-client if you need to backup postgresql databases
