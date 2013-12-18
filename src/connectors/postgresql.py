@@ -55,7 +55,7 @@ class PostgreSQLConnector(DatabaseConnector):
     def check_connection(self):
         super(PostgreSQLConnector, self).check_connection()    
         self.set_password(self.credentials["password"])
-        command = """psql -U "{0}" -h {1} -p {2} -c \\\q""".format(
+        command = """psql -U "{0}" -h {1} -p {2} -d template1 -c \\\q""".format(
                 self.credentials["username"],  
                 self.host['hostname'],
                 self.host['port'],
