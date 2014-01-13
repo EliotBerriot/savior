@@ -28,11 +28,9 @@ class PostgreSQLConnector(DatabaseConnector):
         super(PostgreSQLConnector, self).prepare_connection()
         self.set_logger_message_prefix('PostgreSQL [{0}] - '.format(self.host['hostname']))
        
-    def set_password(self, password):
-        self.run('export PGPASSWORD="{0}"'.format(password))
+    
     def save(self):
         super(PostgreSQLConnector, self).save()
-        self.set_password(self.credentials["password"])
         command = """pg_dump -U "{0}" -h {1} -p {2} {3} > "{4}/{5}.sql" """.format(
                 self.credentials["username"],  
                 self.host['hostname'],
@@ -54,7 +52,6 @@ class PostgreSQLConnector(DatabaseConnector):
                 
     def check_connection(self):
         super(PostgreSQLConnector, self).check_connection()    
-        self.set_password(self.credentials["password"])
         command = """psql -U "{0}" -h {1} -p {2} -d template1 -c \\\q""".format(
                 self.credentials["username"],  
                 self.host['hostname'],
