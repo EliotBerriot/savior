@@ -1,0 +1,10 @@
+Savior script has run on {formated_stamp}, with the following results.
+
+Config check and connection to hosts:
+{config_check_result}
+
+{saved_datasets} datasets were saved:
+{saved_datasets_list}
+
+{dont_need_save_datasets} datasets did not need save:
+{not_saved_datasets_list}

@@ -62,7 +62,7 @@ class Dataset(LoggerAware, ConfigAware):
         self.global_settings['ftp_backup'] = self.get_option('ftp_backup')
     
     def check_config(self):
-        
+
         self.check_connection()
 
     def get_config(self, save):
