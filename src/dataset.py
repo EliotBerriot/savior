@@ -61,6 +61,27 @@ class Dataset(LoggerAware, ConfigAware):
         self.global_settings['days_between_saves'] = self.get_option('days_between_saves')
         self.global_settings['ftp_backup'] = self.get_option('ftp_backup')
     
+    def check_config(self):
+        """
+            Check config and credentials
+        """
+
+    def get_config(self, save):
+        data_options = dict(self.settings.items(save))
+        kwargs = {
+            "dataset_name": self.name,
+            "name":save,
+            "save_path":self.current_save_directory,
+            "dataset_save_id":self.savior.stamp_str,
+            }
+            
+        if data_options.get("host", None):
+            host_options = self.savior.hosts[data_options["host"]]
+        else:
+            host_options= {}
+
+        return (kwargs, data_options, host_options)
+
     def need_save(self):
         """
             Return True if save process is needed. 
@@ -81,6 +102,22 @@ class Dataset(LoggerAware, ConfigAware):
         
         self.log("No need to create a new save")
         return False
+
+    def get_connector(self, save):
+        kwargs, data_options, host_options = self.get_config(save)
+        connector = mapping.MAPPING[data_options["type"]](
+            data_options = data_options,
+            dataset_options=self.global_options,
+            savior_options=self.savior_options, 
+            host_options=host_options,
+            **kwargs 
+            )
+        return connector
+    def check_connection(self):
+        self.log("Checking connections...".format( save))
+        for save in self.sections:            
+            if not save == "global":  
+                self.get_connector(save).check_connection()
     def save(self):
         self.log("beginning of save process...")
             
@@ -88,26 +125,8 @@ class Dataset(LoggerAware, ConfigAware):
         for save in self.sections:            
             if not save == "global":                    
                 self.log("saving [{0}]...".format( save))
-                data_options = dict(self.settings.items(save))
-                kwargs = {
-                    "dataset_name": self.name,
-                    "name":save,
-                    "save_path":self.current_save_directory,
-                    "dataset_save_id":self.savior.stamp_str,
-                    }
-                    
-                if data_options.get("host", None):
-                    host_options = self.savior.hosts[data_options["host"]]
-                else:
-                    host_options= {}
-                connector = mapping.MAPPING[data_options["type"]](
-                    data_options = data_options,
-                    dataset_options=self.global_options,
-                    savior_options=self.savior_options, 
-                    host_options=host_options,
-                    **kwargs 
-                    )
-                connector.save()
+                
+                self.get_connector(save).save()
                 self.log("[{0}] successfully saved".format(save))
         if self.post_save():
             self.log("save  {0})".format(self.current_save_directory))

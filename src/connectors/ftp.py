@@ -46,13 +46,13 @@ class FTPUploadConnector(RemoteConnector):
         self.local_saves_directory = self.kwargs.get('local_saves_directory', None)
         self.remote_saves_directory = self.get_host_option('save_path', './')
         self.sftp = self.convert_to_boolean(self.get_host_option('sftp', False))
-        self.set_logger_message_prefix('FTP Host [{0}] - '.format(self.host['hostname']))
+        self.set_logger_message_prefix('FTP [{0}] - '.format(self.host['hostname']))
     def check_connection(self):       
         super(FTPUploadConnector, self).check_connection()
         try:            
             self.connect()
             self.close_connection()
-            self.log("connection OK")
+            self.log("Successfully connected on port {0} as user {1}, under directory {2}".format(self.host["port"], self.credentials["username"], self.remote_saves_directory))
             return True
         except Exception, e:            
             raise ConnectionError(str(e))

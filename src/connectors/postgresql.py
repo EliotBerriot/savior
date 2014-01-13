@@ -68,5 +68,5 @@ class PostgreSQLConnector(DatabaseConnector):
                 )
             return False
         else:
-            self.log("connection OK")
+            self.log("Successfully connected on port {0} as user {1}, on database {2}".format(self.host["port"], self.credentials["username"], self.database))
             return True

@@ -59,7 +59,6 @@ class Savior(LoggerAware, ConfigAware):
         if self.datasets: # datasets have already been loaded
             return self.datasets
         else:
-            self.check_config()
             
             self.saved_datasets = []
             self.not_saved_datasets = []
@@ -94,7 +93,8 @@ class Savior(LoggerAware, ConfigAware):
         self.init_logger()
  
     def save(self):
-        self.load_datasets()
+
+        self.check_config()            
         
         self.log("Save id [{0}]".format(self.stamp_str))
         self.log("Saving {0} datasets...".format(len(self.datasets)))
@@ -126,7 +126,7 @@ class Savior(LoggerAware, ConfigAware):
         """
             Remove old saves
         """
-        self.load_datasets()
+        self.check_config() 
         self.log("cleaning {0} datasets...".format(len(self.datasets)))
         self.cleaned_datasets = []
         for ds in self.datasets:
@@ -134,7 +134,7 @@ class Savior(LoggerAware, ConfigAware):
             self.cleaned_datasets.append(ds)
         self.log("save process ended : {0} datasets have been cleaned".format(len(self.cleaned_datasets)))
     def purge(self):
-        self.load_datasets()
+        self.check_config() 
         self.log("purging {0} datasets...".format(len(self.datasets)))
         for ds in self.datasets:
             ds.purge()
@@ -173,7 +173,7 @@ class Savior(LoggerAware, ConfigAware):
             Check if settings and hosts.ini are correctly written, 
             check credentials and hosts access
         """
-    
+        self.load_datasets()
         # Parse hosts.ini
         self.log("checking hosts...")
         self.hosts = {}
