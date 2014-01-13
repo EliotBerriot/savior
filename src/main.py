@@ -26,8 +26,10 @@ import smtplib
 from email.mime.text import MIMEText
 from connectors import mapping
 from utils import LoggerAware, ConfigAware
-from errors import ParseConfigError
+from errors import ParseConfigError, CheckConfigError
 from dataset import Dataset
+from wrappers import need_config_check
+
 class Savior(LoggerAware, ConfigAware):
     """
         The main class of Savior project
@@ -56,34 +58,39 @@ class Savior(LoggerAware, ConfigAware):
         self.log_setup()
         
     def load_datasets(self):
-        if self.datasets: # datasets have already been loaded
-            return self.datasets
-        else:
-            
-            self.saved_datasets = []
-            self.not_saved_datasets = []
-            self.dont_need_save_datasets = []
-            
-            # create datasets
-            self.datasets_path = self.root_path+"/datasets" 
-            
-            datasets_names = []
-            [f for f in os.listdir('.') if os.path.isfile(f)]
-            #get name of datasets to save
-            if self.datasets_to_save=="all":
-                os.chdir(self.datasets_path)
-                datasets_names = [f for f in os.listdir("./") if os.path.isfile(f)]
-                os.chdir(self.root_path)
-            # save a single dataset
-            elif type(self.datasets_to_save) == list:
-                datasets_names=self.datasets_to_save
-            
-            # instantiate datasets objects
-            for file_name in datasets_names:            
-                ds = Dataset(self, self.datasets_path, file_name)
-                self.datasets.append(ds)
+        self.log("Loading datasets...")
+        try:
+            if self.datasets: # datasets have already been loaded
+                return self.datasets
+            else:
                 
-            return self.datasets
+                self.saved_datasets = []
+                self.not_saved_datasets = []
+                self.dont_need_save_datasets = []
+                
+                # create datasets
+                self.datasets_path = self.root_path+"/datasets" 
+                
+                datasets_names = []
+                [f for f in os.listdir('.') if os.path.isfile(f)]
+                #get name of datasets to save
+                if self.datasets_to_save=="all":
+                    os.chdir(self.datasets_path)
+                    datasets_names = [f for f in os.listdir("./") if os.path.isfile(f)]
+                    os.chdir(self.root_path)
+                # save a single dataset
+                elif type(self.datasets_to_save) == list:
+                    datasets_names=self.datasets_to_save
+                
+                # instantiate datasets objects
+                for file_name in datasets_names:            
+                    ds = Dataset(self, self.datasets_path, file_name)
+                    self.datasets.append(ds)
+                self.log("Datasets loaded")
+                return self.datasets
+
+        except Exception, e:
+            raise CheckConfigError("Error while loading datasets: {0}".format(e))
         
     def log_setup(self):
         # create file handler which logs even debug messages
@@ -91,7 +98,8 @@ class Savior(LoggerAware, ConfigAware):
             self.stamp_str
             )
         self.init_logger()
- 
+
+    @need_config_check
     def save(self):
 
         self.check_config()            
@@ -144,7 +152,6 @@ class Savior(LoggerAware, ConfigAware):
         self.check_config()
         
     def load_settings(self):
-        
         self.root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))        
         os.chdir(self.root_path)
         
@@ -173,22 +180,41 @@ class Savior(LoggerAware, ConfigAware):
             Check if settings and hosts.ini are correctly written, 
             check credentials and hosts access
         """
+        self.log("Checking configuration and connections to hosts...")
+
+        try:
+            # Parse hosts.ini
+            self.hosts = {}
+            with open(os.path.join(os.getcwd(),'hosts.ini'),'r') as configfile: 
+                hosts = ConfigParser.ConfigParser()
+                hosts.readfp(configfile)
+            # check connexion for each host, if needed
+            
+        except Exception, e:
+            raise CheckConfigError("Error while loading config file: {0}".format(e))
+
         self.load_datasets()
-        # Parse hosts.ini
-        self.log("checking hosts...")
-        self.hosts = {}
-        with open(os.path.join(os.getcwd(),'hosts.ini'),'r') as configfile: 
-            hosts = ConfigParser.ConfigParser()
-            hosts.readfp(configfile)
-        # check connexion for each host, if needed
-        
-        for host in hosts.sections():
-            options = dict(hosts.items(host))
-            self.hosts[host] = options
-            # get connector instance from type setting
-            connector = mapping.MAPPING[options["type"]](host_options=options)
-            connector.check_connection()
-           
+
+        try:
+            self.log("Checking global hosts and credentials...")
+            for host in hosts.sections():
+                options = dict(hosts.items(host))
+                self.hosts[host] = options
+                # get connector instance from type setting
+                connector = mapping.MAPPING[options["type"]](host_options=options)
+                connector.check_connection()
+               
+            # check each dataset connections
+            self.log("Checking hosts and credentials for each dataset...")
+            
+            for ds in self.datasets:
+                ds.check_config()
+
+        except Exception, e:      
+            raise CheckConfigError("Error while checking connection to hosts: {0}".format(e))
+        else:
+            self.log("Config files and connection successfully checked")
+
     def mail(self):
         """
             Send a mail to all admins
@@ -218,7 +244,7 @@ class Savior(LoggerAware, ConfigAware):
             for ds in self.saved_datasets:
                 mail_content+= "  - {0}\n".format(ds.name)
 
-            mail_content+= "\nFor some reaseon, the following datasets HAVE NOT been saved :\n"            
+            mail_content+= "\nFor some reason, the following datasets HAVE NOT been saved :\n"            
             for ds in self.not_saved_datasets:
                 mail_content+= "  - {0}\n".format(ds.name)
             

@@ -33,3 +33,7 @@ class ParseConfigError(SaviorError):
     
     def set_message(self, message):
         self.message = """Error while parsing config file : {0}""".format(message)
+
+class CheckConfigError(SaviorError):
+    def set_message(self, message):
+        self.message = """Savior has met a critical error while checking configuration files and connection to hosts. Please double-check your hosts.ini and settings.ini files.""".format(message) 

@@ -62,16 +62,15 @@ class Dataset(LoggerAware, ConfigAware):
         self.global_settings['ftp_backup'] = self.get_option('ftp_backup')
     
     def check_config(self):
-        """
-            Check config and credentials
-        """
+        
+        self.check_connection()
 
     def get_config(self, save):
         data_options = dict(self.settings.items(save))
         kwargs = {
             "dataset_name": self.name,
             "name":save,
-            "save_path":self.current_save_directory,
+            "save_path":self.get_current_directory_name(),
             "dataset_save_id":self.savior.stamp_str,
             }
             
@@ -114,14 +113,18 @@ class Dataset(LoggerAware, ConfigAware):
             )
         return connector
     def check_connection(self):
-        self.log("Checking connections...".format( save))
+        self.log("Checking connections...")
         for save in self.sections:            
             if not save == "global":  
                 self.get_connector(save).check_connection()
+
+    def get_current_directory_name(self):
+        return self.save_directory+"/"+self.savior.stamp_str
+
     def save(self):
         self.log("beginning of save process...")
             
-        self.current_save_directory = self.create_directory(self.save_directory+"/"+self.savior.stamp_str)
+        self.current_save_directory = self.create_directory(self.get_current_directory_name())
         for save in self.sections:            
             if not save == "global":                    
                 self.log("saving [{0}]...".format( save))
