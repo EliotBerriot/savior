@@ -5,11 +5,14 @@ env_settings.py
 settings.ini
 hosts.ini
 datasets/*
+!datasets/examples/
+!datasets/disabled
+!datasets/disabled/*
 logs/*
 fabfile.py
 .sublime*
 !logs/.empty
-!datasets/examples/
+
 # OS generated files #
 ######################
 .DS_Store
