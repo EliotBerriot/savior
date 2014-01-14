@@ -25,7 +25,7 @@ import shutil
 import smtplib
 from email.mime.text import MIMEText
 from connectors import mapping
-from utils import LoggerAware, ConfigAware
+from utils import LoggerAware, ConfigAware, human_size
 from errors import ParseConfigError, CheckConfigError
 from dataset import Dataset
 from wrappers import need_config_check
@@ -49,6 +49,7 @@ class Savior(LoggerAware, ConfigAware):
         self.settings = None  
         self.hosts = None
         self.datasets = []
+        self.size = 0 # total size of datasets (in bytes)
         # if force_save is set to True, days_between_saves option in settings
         # will be ignored
         
@@ -126,7 +127,13 @@ class Savior(LoggerAware, ConfigAware):
                     self.dont_need_save_datasets.append(ds)
             else:
                 self.not_saved_datasets.append(ds)
-        self.log("Save process ended : {0} datasets have been saved".format(len(self.saved_datasets)))
+
+        self.size = sum( [ds.size for ds in self.datasets ])
+        self.log("Save process ended : {0} datasets have been saved. (size: {1})".format(
+            len(self.saved_datasets), 
+            human_size(self.size)
+            )
+        )
         if self.send_mail:            
             self.mail()
      
@@ -226,23 +233,23 @@ class Savior(LoggerAware, ConfigAware):
         mail_subject=""        
         
         if len(self.saved_datasets)+ len(self.dont_need_save_datasets)==len(self.datasets) and len(self.not_saved_datasets)==0:
-            mail_subject = "Savior : {0} successfully ended".format(formated_stamp)
+            mail_subject = "Savior : {0} successfully ended ({1} saved)".format(formated_stamp, human_size(self.size))
             mail_content+= "Savior script has run correctly on {0}.\n".format(formated_stamp)
             mail_content+= "{0} datasets were saved :\n".format(len(self.saved_datasets))
             for ds in self.saved_datasets:
-                mail_content+= "- {0}\n".format(ds.name)
+                mail_content+= "  - {0} ({1} saved)\n".format(ds.name, human_size(ds.size))
                 
             mail_content+= "{0} datasets did not need save :\n".format(len(self.dont_need_save_datasets))
             for ds in self.dont_need_save_datasets:
                 mail_content+= "- {0}\n".format(ds.name)
             
         elif len(self.saved_datasets)>0 and len(self.not_saved_datasets)>0:
-            mail_subject = "Savior : {0} ended with maybe some errors".format(formated_stamp)
+            mail_subject = "Savior : {0} ended with maybe some errors ({1} saved)".format(formated_stamp, human_size(self.size))
             mail_content+= "Savior script has run on {0}.\n".format(formated_stamp)
             mail_content+= "{0} datasets on {1} have been saved :\n".format(len(self.saved_datasets),len(self.datasets))
             
             for ds in self.saved_datasets:
-                mail_content+= "  - {0}\n".format(ds.name)
+                mail_content+= "  - {0} ({1} saved)\n".format(ds.name, human_size(ds.size))
 
             mail_content+= "\nFor some reason, the following datasets HAVE NOT been saved :\n"            
             for ds in self.not_saved_datasets:
