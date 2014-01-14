@@ -137,7 +137,8 @@ All options are described in the file, read carefully ;)
 As this file will contain sensitive informations, remember to secure it:
     
     chmod 750 hosts.ini
-    
+
+For specific settings, have a look at [the docs directory](docs).
     
 ## Datasets
 
