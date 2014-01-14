@@ -5,7 +5,7 @@ Indeed, PostgreSQL dump client require you to have a `.pgpass` file under your `
 
 This file must contain informations on your host, database, username and password.
 
-[An example .pgpass)](../install/.pgpass) file can be found under [install directory](../install).
+[An example .pgpass](../install/postgresql/.pgpass) file can be found under [install directory](../install).
 
 Just run (under savior directory): 
 	
