@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Savior.  If not, see <http://www.gnu.org/licenses/>.
 
-from base import BaseConnector, SaveError
+from base import BaseConnector, SaveError, ConnectionError
 import os
 
 class FileSystemConnector(BaseConnector):
@@ -33,9 +33,23 @@ class FileSystemConnector(BaseConnector):
         super(FileSystemConnector, self).prepare_save()
         self.path_to_save = self.data_options['path']
         self.exclude = self.data_options.get('exclude', "").split(",")
+        self.set_logger_message_prefix('Filesystem [{0}] - '.format(self.dataset_name))
         
+    def check_connection(self):
+        self.prepare_save()
+        try:          
+            os.access(self.path_to_save, os.F_OK)
+            os.access(self.path_to_save, os.R_OK)
+            self.log("Savior has read access to directory {0}".format(self.path_to_save))
+            return True
+        except Exception, e:            
+            raise ConnectionError("Savior can't read directory {0}".format(self.path_to_save))
+            return False
     def get_save_path(self):
         return self.save_path+"/"+self.name+".tar.gz"
+        
+    def prepare_connection(self):
+        super(FileSystemConnector, self).prepare_connection()
         
     def save(self):
         super(FileSystemConnector, self).save()

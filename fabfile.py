@@ -38,7 +38,6 @@ def push(branch='master', remote='origin', runlocal=True):
  
 def pull(branch='master', remote='origin', runlocal=True):
     if runlocal:
-        local("echo lol")
         local("git pull %s %s" % (remote, branch))
     else:
         run("git pull %s %s" % (remote, branch))
