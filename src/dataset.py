@@ -23,7 +23,7 @@ import shutil
 import smtplib
 from email.mime.text import MIMEText
 from connectors import mapping
-from utils import LoggerAware, ConfigAware, folder_size
+from utils import LoggerAware, ConfigAware, folder_size, human_size
 from errors import ParseConfigError
 
 class Dataset(LoggerAware, ConfigAware):
@@ -34,7 +34,7 @@ class Dataset(LoggerAware, ConfigAware):
         self.config = config_file
         self.settings = ConfigParser.ConfigParser()
         config_path = path+"/"+self.config
-        
+        self.size = 0 #the size of save
         
         if not os.path.exists(config_path):
             raise ParseConfigError("File {0} does not exist".format(config_path))
@@ -134,7 +134,8 @@ class Dataset(LoggerAware, ConfigAware):
         if self.post_save():
             self.log("save  {0})".format(self.current_save_directory))
             
-            self.log("save process successfully ended (total size: {0})".format(folder_size(self.current_save_directory)))
+            self.log("save process successfully ended (total size: {0})".format(human_size(self.size)))
+            
             return True
         else:
             return False           
@@ -186,6 +187,7 @@ class Dataset(LoggerAware, ConfigAware):
                     )
             connector.upload()
         keep_local_saves = self.convert_to_boolean(self.get_option('keep_local_saves'))
+        self.size += folder_size(self.current_save_directory, human=False)
         if not keep_local_saves:
             self.remove_local_save()
         self.remove_old_saves()
