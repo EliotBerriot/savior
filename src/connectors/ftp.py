@@ -51,7 +51,7 @@ class FTPUploadConnector(RemoteConnector):
             default_port = self.sftp_port
         else:
             default_port = self.ftp_port
-        self.host["port"] = self.get_host_option("port", default_port)
+        self.host["port"] = int(self.get_host_option("port", default_port))
     def check_connection(self):       
         super(FTPUploadConnector, self).check_connection()
         try:            
