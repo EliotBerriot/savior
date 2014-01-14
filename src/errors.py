@@ -36,4 +36,4 @@ class ParseConfigError(SaviorError):
 
 class CheckConfigError(SaviorError):
     def set_message(self, message):
-        self.message = """Savior has met a critical error while checking configuration files and connection to hosts. Please double-check your hosts.ini and settings.ini files.""".format(message) 
+        self.message = """Savior has met a critical error while checking configuration files and connection to hosts: {0}. Please double-check your hosts.ini and settings.ini files.""".format(message) 
