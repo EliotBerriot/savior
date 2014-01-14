@@ -47,6 +47,11 @@ class FTPUploadConnector(RemoteConnector):
         self.remote_saves_directory = self.get_host_option('save_path', './')
         self.sftp = self.convert_to_boolean(self.get_host_option('sftp', False))
         self.set_logger_message_prefix('FTP [{0}] - '.format(self.host['hostname']))
+        if self.sftp
+            default_port = self.sftp_port
+        else:
+            default_port = self.ftp_port
+        self.host["port"] = self.get_host_option("port", default_port)
     def check_connection(self):       
         super(FTPUploadConnector, self).check_connection()
         try:            
