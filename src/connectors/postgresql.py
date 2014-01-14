@@ -28,7 +28,9 @@ class PostgreSQLConnector(DatabaseConnector):
         super(PostgreSQLConnector, self).prepare_connection()
         self.set_logger_message_prefix('PostgreSQL [{0}] - '.format(self.host['hostname']))
        
-    
+    def set_credentials(self):
+        self.credentials['username'] = self.get_host_option('username')
+        
     def save(self):
         super(PostgreSQLConnector, self).save()
         command = """pg_dump -U "{0}" -h {1} -p {2} {3} > "{4}/{5}.sql" """.format(
