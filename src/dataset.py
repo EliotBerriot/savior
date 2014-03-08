@@ -250,7 +250,7 @@ class Dataset(LoggerAware, ConfigAware):
         self.log('checking for saves older than {0} day(s)'.format(time_to_live))
         old_saves = sorted(self.get_saves_by_date(time_to_live, "lesser_than"))
         
-        self.log("Saves too old: {0}".format(old_saves.join(", ")))
+        self.log("Saves too old: {0}".format(", ".join(old_saves)))
         if len(old_saves) > 0:
             self.log('found {0} saves older than {1} day(s)'.format(len(old_saves),time_to_live))
             for save in old_saves:
