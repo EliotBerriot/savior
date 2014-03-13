@@ -231,6 +231,7 @@ class Dataset(LoggerAware, ConfigAware):
             )
         )
         existing_saves = self.get_all_saves()
+        self.log("All saves: {0}".format(", ".join(existing_saves)))
         self.log('remove old saves...')
         ok_for_delete = 0 # amount of saves that can be safely delete
         if len(existing_saves) <= min_saves_number:
@@ -297,7 +298,7 @@ class Dataset(LoggerAware, ConfigAware):
             kwargs = {
                 "dataset_name": self.name,
                 "local_saves_directory":self.savior.save_path, 
-                "dataset_save_id":self.savior.stamp_str, 
+                "dataset_save_id": dataset_save_id, 
                 }
             connector = mapping.MAPPING['ftpupload'](
                     host_options=host_options,
